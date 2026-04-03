@@ -6,7 +6,8 @@ import userModel from "../models/user.model.js";
 
 
 export const register = async (req, res) => {
-    const {name, email, password} = req.body;
+   try {
+     const {name, email, password} = req.body;
 
     const isAlreadyRegistered = await userModel.findOne({email});
     if(isAlreadyRegistered){
@@ -38,12 +39,29 @@ export const register = async (req, res) => {
         },
         token
     })
+
+    await user.save();
+
+   } catch (error) {
+     res.status(500).json({
+        message:'Internal server error'
+     })
+
+   }
  
 
 
 }
 
 export const login = async (req, res) => {
+
+    try {
+        
+    } catch (error) {
+        res.status(500).json({
+            message:'Internal server error'
+        })
+    }
     
 }
 
@@ -52,9 +70,55 @@ export const logout = async (req, res) => {
 }
 
 export const updateProfile = async (req, res) => {
+
+    try {
+        
+    } catch (error) {
+        res.status(500).json({
+            message:'Internal server error'
+        })
+    }
     
 }
 
 export const getProfile = async (req, res) => {
+   try {
+     const token = req.headers.authorization.split(' ')[1];
     
+    if(!token){
+        return res.status(401).json({
+            message:'Unauthorized'
+        })
+    }
+    
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    if(!decoded){
+        return res.status(401).json({
+            message:'Unauthorized'
+        })
+    }
+
+    const user = await userModel.findById(decoded.id);
+    if(!user){
+        return res.status(404).json({
+            message:'User not found'
+        })
+    }
+
+
+    res.status(200).json({
+        message:'Profile fetched successfully',
+        user: {
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
+    })
+   } catch (error) {
+    
+    res.status(500).json({
+        message:'Internal server error'
+    })
+   }
 }
+

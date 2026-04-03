@@ -1,18 +1,19 @@
 import express from 'express'
-import cofig from './config/config.js';
+import config from './config/config.js';
 const app = express();
 import connectDB from './config/db.js'
 import userRoute from './routes/user.routes.js'
-import { config } from 'dotenv';
 import dns from 'dns';
 
 
 dns.setServers(["1.1.1.1","8.8.8.8"]);
 
+app.use(express.json());
+
+
 
 
 app.use('/user', userRoute)
-
 
 
 
