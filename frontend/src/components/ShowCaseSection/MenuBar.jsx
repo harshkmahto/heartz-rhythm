@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, ShoppingBag, LayoutDashboard, Home, Sun, Moon, Heart, ShoppingCart, Package, Settings, LogOut } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import Button from './Buttons';
 
 const MobileMenu = ({ isOpen, onClose }) => {
   const { isDark, toggleTheme } = useTheme();
@@ -139,6 +140,12 @@ const MobileMenu = ({ isOpen, onClose }) => {
                   );
                 })}
               </div>
+            </div>
+
+            <div className='flex justify-center items-center mt-10 mb-4'>
+              <Link to='/auth'>
+              <Button text="Login" />
+              </Link>
             </div>
 
             {/* Logout Button */}

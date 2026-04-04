@@ -23,6 +23,7 @@ import WishList from "../pages/Order/WishList";
 import Cart from "../pages/Order/Cart";
 import Checkout from "../pages/Order/Checkout";
 import Profile from "../pages/Auth/Profile";
+import LoginRegister from "../pages/Auth/LoginRegister";
 
 
 
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
     {path: '/', element:<App/>, 
         children:[
             {index: true, element:<Home/>},
+            {path: 'auth', element:<LoginRegister/> },
             {path: 'about', element:<About/>},
             {path: 'shop', element:<Shop/>},
             {path: 'blogs', element:<BlogPage/>},
