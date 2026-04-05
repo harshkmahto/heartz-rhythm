@@ -1,6 +1,7 @@
 import express from 'express'
 import config from './config/config.js';
 const app = express();
+import cookieparse from ('cookie-parse')
 import connectDB from './config/db.js'
 import userRoute from './routes/user.routes.js'
 import dns from 'dns';
@@ -9,6 +10,7 @@ import dns from 'dns';
 dns.setServers(["1.1.1.1","8.8.8.8"]);
 
 app.use(express.json());
+app.use(cookieparse());
 
 
 
