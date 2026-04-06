@@ -19,11 +19,32 @@ const userSchema = new mongoose.Schema ({
     },
     role:{
         type:String,
-        emum:['customer, seller, admin'], 
+        enum:['customer, seller, admin'], 
         default:'customer'
     
-    }
+    },
+    isBlocked:{
+        type:Boolean,
+        default:false
+    },
+    status:{
+        type:String,
+        enum:["active", "pending", "review", ],
+
+    },
+    phone:{
+        type:Number,
+
+    },
+    verified:{
+        type:Boolean,
+        default:true
+    },
+   
+
     
+},{
+    timestamps:true
 })
 
 const userModel = mongoose.model('User', userSchema);

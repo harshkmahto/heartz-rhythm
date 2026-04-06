@@ -1,14 +1,31 @@
 import { Router} from 'express'
-import { getProfile, login, logout, register, updateProfile } from '../controller/user.controller.js';
+import { forgetPassword, getProfile, login, logout, logoutallDevice, register, resendForgetOTP, resendOTP, resetPassword, sellerRegister, updateProfile, verifyForgetOTP, verifySellerOTP } from '../controller/user.controller.js';
+import { authorized } from '../middleware/auth.middleware.js';
 
 const userRoute = Router();
 
 
 userRoute.post('/register', register)
-userRoute.get('/login', login)
-userRoute.get('/logout', logout)
-userRoute.patch('/update/profile', updateProfile)
-userRoute.get('/profile', getProfile)
+userRoute.post('/seller/register', sellerRegister)
+userRoute.post('/seller/verify-otp', verifySellerOTP)
+userRoute.post('/seller/resend-otp', resendOTP)
+
+userRoute.post('/login', login)
+
+userRoute.post('/logout', logout)
+userRoute.post('/logout/all', logoutallDevice)
+
+userRoute.patch('/update/profile',authorized, updateProfile)
+
+userRoute.post('/forget-password', forgetPassword)
+userRoute.post('/password/otp-verify', verifyForgetOTP)
+userRoute.post('/password/resend-otp', resendForgetOTP)
+userRoute.post('/password/reset', authorized, resetPassword)
+
+
+userRoute.get('/profile',authorized, getProfile)
+
+
 
 
 export default userRoute
