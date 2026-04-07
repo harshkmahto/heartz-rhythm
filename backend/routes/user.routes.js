@@ -1,5 +1,8 @@
 import { Router} from 'express'
-import { forgetPassword, getProfile, login, logout, logoutallDevice, register, resendForgetOTP, resendOTP, resetPassword, sellerRegister, updateProfile, verifyForgetOTP, verifySellerOTP } from '../controller/user.controller.js';
+import { forgetPassword, getAllSeller, getAllUser, getProfile, getSingleUser,
+     login, logout, logoutallDevice, register, resendForgetOTP, resendOTP,
+     resetPassword, sellerRegister, updateProfile,
+     verifyForgetOTP, verifySellerOTP } from '../controller/user.controller.js';
 import { authorized } from '../middleware/auth.middleware.js';
 
 const userRoute = Router();
@@ -25,6 +28,10 @@ userRoute.post('/password/reset', authorized, resetPassword)
 
 userRoute.get('/profile',authorized, getProfile)
 
+// route for admin
+userRoute.get('/admin/all-user',authorized, getAllUser)
+userRoute.get('/admin/user/:id',authorized, getSingleUser)
+userRoute.get('/admin/seller',authorized, getAllSeller)
 
 
 
