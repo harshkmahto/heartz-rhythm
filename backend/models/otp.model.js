@@ -11,6 +11,12 @@ const otpSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    type: {
+        type: String,
+        required: true,
+        enum: ['seller_register', 'forget_password'],  // Add this!
+        default: 'seller_register'
+    },
     attempts: {
         type: Number,
         default: 0

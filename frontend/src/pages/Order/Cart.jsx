@@ -1,8 +1,17 @@
 import React from 'react';
 import { Minus, Plus, Trash2, ShieldCheck, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import NotLoggedin from '../../components/ShowCaseSection/NotLoggedin';
 
 const Cart = () => {
+
+  const{ isAuthenticated } = useAuth();
+
+
+  if (!isAuthenticated) {
+    return <NotLoggedin/>
+  }
   return (
     <div className="bg-[var(--color-bg)] text-[var(--color-text-main)] w-full">
       <main className="pt-10 md:pt-20 pb-20 px-4 md:px-8 max-w-7xl mx-auto">

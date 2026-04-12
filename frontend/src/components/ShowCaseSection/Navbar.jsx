@@ -4,14 +4,16 @@ import { Moon, Sun, ShoppingCart, User, Search, Menu } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileMenu from './MenuBar';
+import { useAuth } from '../../context/AuthContext';
+import Button from './Buttons';
 
 function Navbar() {
-  const { isDark, toggleTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
+  const {isAuthenticated} = useAuth();
   // Handle scroll visibility
   useEffect(() => {
     const handleScroll = () => {
@@ -48,7 +50,7 @@ function Navbar() {
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : -100 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-15 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl shadow-[0_0_20px_rgba(255,60,56,0.1)] border-b border-neutral-200/50 dark:border-neutral-800/50 transition-colors duration-300"
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-15 bg-transparent backdrop-blur  transition-colors duration-300"
       >
         {/* Logo - Left Side */}
         <Link 
@@ -59,15 +61,23 @@ function Navbar() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <div className="hidden md:flex items-center gap-8 lg:gap-10">
+        <div className="hidden md:flex items-center gap-8 lg:gap-10 bg-white/10 backdrop-blur shadow-sm rounded-2xl p-3">
           {['SHOP', 'ABOUT', 'BLOGS', 'CONTACT'].map((item) => (
             <Link
               key={item}
               to={`/${item.toLowerCase()}`}
-              className="group relative font-headline tracking-tight text-neutral-700 dark:text-neutral-100 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors duration-300"
+              className="group relative overflow-hidden font-headline tracking-tight text-black/90 dark:text-white/90"
             >
-              {item}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 group-hover:w-full transition-all duration-300 ease-out"></span>
+              {/* Original text - slides up on hover */}
+              <div className="transition-transform duration-300 ease-out group-hover:-translate-y-full">
+                {item}
+              </div>
+              
+              {/* Duplicate text - slides up from bottom on hover */}
+              <div className="absolute inset-0 transition-transform duration-300 ease-out translate-y-full group-hover:translate-y-0">
+                {item}
+              </div>
+              
             </Link>
           ))}
         </div>
@@ -99,7 +109,9 @@ function Navbar() {
             </motion.button>
           </div>
 
-          {/* Cart */}
+          {isAuthenticated ? ( 
+            <div className='flex items-center justify-center gap-4'>
+                {/* Cart */}
           <Link to="/cart" className="relative group">
             <motion.div
               whileHover={{ scale: 1.1 }}
@@ -123,6 +135,25 @@ function Navbar() {
               <User size={20} />
             </motion.div>
           </Link>
+            </div>
+
+          ):(
+            <div>
+              <Link to='/auth'>
+              <Button 
+               text="Login" 
+               size='sm' 
+               fromColor='transparent'
+               toColor='transparent'
+               textColor='black'
+               darkText='white'
+               hoverColor='red-500'
+               />
+               </Link>
+            </div>
+          ) }
+
+        
 
           {/* Menu Button - Visible on all screens */}
           <motion.button 

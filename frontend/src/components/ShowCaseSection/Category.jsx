@@ -49,9 +49,9 @@ const Category = () => {
       transition={{ duration: 0.25, ease: 'easeOut' }}
       className={`fixed w-full z-40 ${
         isSticky 
-          ? 'bg-white/95 dark:bg-neutral-950/95 shadow-lg' 
-          : 'bg-white/60 dark:bg-neutral-950/60'
-      } backdrop-blur-xl border-b border-neutral-200/50 dark:border-neutral-800/50`}
+          ? 'bg-white/10 dark:bg-neutral-950/95 shadow-lg' 
+          : 'bg-white/20 dark:bg-neutral-950/60'
+      } backdrop-blur-xl `}
       style={{ top: isSticky ? 0 : 48 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -74,7 +74,7 @@ const Category = () => {
                   <span className="text-xl md:text-2xl filter drop-shadow-lg">
                     {category.icon}
                   </span>
-                  <span className={`
+                  <div className={`
                     text-xs md:text-sm font-semibold tracking-wide whitespace-nowrap
                     transition-all duration-300
                     ${isActive 
@@ -83,8 +83,17 @@ const Category = () => {
                     }
                     ${isActive ? 'glow-text' : 'group-hover:glow-text'}
                   `}>
+                    <div className='group relative overflow-hidden '>
+                    <div className='transition-transform duration-300 ease-out group-hover:-translate-y-full'>
+                      {category.name}
+                    </div>
+                    <div className='absolute inset-0 transition-transform duration-300 ease-out translate-y-full group-hover:translate-y-0'>
                     {category.name}
-                  </span>
+                    </div>
+                    </div>
+
+
+                  </div>
                   
                   {/* Active Indicator */}
                   {isActive && (

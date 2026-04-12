@@ -24,6 +24,14 @@ import Cart from "../pages/Order/Cart";
 import Checkout from "../pages/Order/Checkout";
 import Profile from "../pages/Auth/Profile";
 import LoginRegister from "../pages/Auth/LoginRegister";
+import BecomeSeller from "../pages/Seller/BecomeSeller";
+import NotFound from "../pages/ShowCase/NotFound";
+import SellerLogin from "../pages/Auth/SellerLogin";
+import SellerRegister from "../pages/Auth/SellerRegister";
+import SellerVerify from "../pages/Auth/SellerVerify";
+import ForgetPassword from "../pages/Auth/ForgetPassword";
+import ProtectedRoute from "../components/Auth/ProtectedRoute";
+import SellerBrandPannel from "../pages/Seller/SellerBrandPannel";
 
 
 
@@ -33,6 +41,16 @@ const router = createBrowserRouter([
         children:[
             {index: true, element:<Home/>},
             {path: 'auth', element:<LoginRegister/> },
+
+            {path: 'seller/auth', element:<SellerLogin/>},
+            {path: 'seller/signup', element:<SellerRegister/> },
+            {path: 'seller/login', element:<SellerLogin/>},
+            {path: 'seller/verify', element:<SellerVerify/>},
+
+            {path: 'forgot-password', element:<ForgetPassword/>},
+
+            {path: 'seller/become-seller', element:<BecomeSeller/>},
+            
             {path: 'about', element:<About/>},
             {path: 'shop', element:<Shop/>},
             {path: 'blogs', element:<BlogPage/>},
@@ -41,26 +59,37 @@ const router = createBrowserRouter([
             {path: 'category/acoustic', element: <AcousticCategory/>},
             {path: 'category/electric', element: <ElectricCategory/>},
             {path: 'category/semi-acoustic', element: <SemiAcousticCategory/>},
-            {path: 'wishlist', element: <WishList/>},
+
+            {path: '*', element: <NotFound/>},
+
+
+
+
+            
+            {path: 'wishlist',element: ( <ProtectedRoute>  <WishList/> </ProtectedRoute> )},
             {path: 'cart', element: <Cart/>},
             {path: 'checkout', element: <Checkout/>},
             {path: 'profile', element: <Profile/>}
+            
         ],
     },
 
-    {path: 'seller', element:<SellerPannel/>,
+    {path: 'seller', element:
+       <ProtectedRoute allowedRoles={['seller']}> <SellerPannel/> </ProtectedRoute>,
         children:[
             {index: true, element:<SellerDashboard/>},
             {path: 'products', element:<SellerProductManagement/>},
             {path: 'products/all', element:<SellerAllProduct/>},
+            {path: 'aboutme', element:<SellerBrandPannel/>},
         ],
     },
 
-    {path: 'admin', element:<AdminPannel/>,
+    {path: 'admin', element:
+        <ProtectedRoute allowedRoles={['admin']}><AdminPannel/> </ProtectedRoute>,
         children:[
             {index: true, element:<AdminDashboard/>},
-            {path: 'users', element:<AllUsers/>},
-            {path: 'user/management', element:<UserManagement/>},
+            {path: 'users/all', element:<AllUsers/>},
+            {path: 'users', element:<UserManagement/>},
             {path: 'orders', element:<OrderManagement/>},
             {path: 'products', element:<ProductManagement/>},
         ],

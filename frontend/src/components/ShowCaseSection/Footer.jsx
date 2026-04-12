@@ -28,7 +28,7 @@ const Footer = () => {
   const supportLinks = [
     { name: 'Help Center', path: '/help' },
     { name: 'Returns & Refunds', path: '/returns' },
-    { name: 'Shipping Info', path: '/shipping' },
+    { name: 'Become a Seller', path: '/seller/become-seller' },
     { name: 'Privacy Policy', path: '/privacy' },
     { name: 'Terms of Service', path: '/terms' },
   ];
@@ -49,30 +49,47 @@ const Footer = () => {
 
   return (
     <footer className="bg-white dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800 mt-auto">
-      {/* Newsletter Section */}
-      <div className="border-b border-neutral-200 dark:border-neutral-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-center md:text-left">
-              <h3 className="text-2xl font-bold italic text-neutral-900 dark:text-neutral-50 mb-2">
-                Stay in Rhythm
-              </h3>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Subscribe to get special offers, new releases, and exclusive content.
-              </p>
+
+      {/* Features Section */}
+      <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="flex items-center gap-3">
+              <Truck className="text-red-500" size={24} />
+              <div>
+                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">Free Shipping</p>
+                <p className="text-neutral-600 dark:text-neutral-400 text-xs">On orders over rs.100</p>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="px-5 py-3 rounded-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-neutral-900 dark:text-neutral-50 min-w-[250px]"
-              />
-              <button className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full font-medium hover:shadow-lg hover:shadow-red-500/25 transition-all duration-300 hover:scale-105 active:scale-95">
-                Subscribe
-              </button>
+            <div className="flex items-center gap-3">
+              <Award className="text-red-500" size={24} />
+              <div>
+                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">Quality Guarantee</p>
+                <p className="text-neutral-600 dark:text-neutral-400 text-xs">Premium instruments</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Headphones className="text-red-500" size={24} />
+              <div>
+                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">24/7 Support</p>
+                <p className="text-neutral-600 dark:text-neutral-400 text-xs">Dedicated assistance</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Heart className="text-red-500" size={24} />
+              <div>
+                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">Secure Payments</p>
+                <p className="text-neutral-600 dark:text-neutral-400 text-xs">100% secure checkout</p>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+
+      {/* Newsletter Section */}
+      <div className="border-b border-neutral-200 dark:border-neutral-800">
+        
       </div>
 
       {/* Main Footer Content */}
@@ -199,63 +216,9 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3">
-              <Truck className="text-red-500" size={24} />
-              <div>
-                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">Free Shipping</p>
-                <p className="text-neutral-600 dark:text-neutral-400 text-xs">On orders over $100</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Award className="text-red-500" size={24} />
-              <div>
-                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">Quality Guarantee</p>
-                <p className="text-neutral-600 dark:text-neutral-400 text-xs">Premium instruments</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Headphones className="text-red-500" size={24} />
-              <div>
-                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">24/7 Support</p>
-                <p className="text-neutral-600 dark:text-neutral-400 text-xs">Dedicated assistance</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Heart className="text-red-500" size={24} />
-              <div>
-                <p className="font-semibold text-neutral-900 dark:text-neutral-50 text-sm">Secure Payments</p>
-                <p className="text-neutral-600 dark:text-neutral-400 text-xs">100% secure checkout</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
-      {/* Bottom Bar */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-center">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              © {currentYear} Heart Rhythm. All rights reserved. Made with <Heart size={12} className="inline text-red-500" fill="currentColor" /> for music lovers.
-            </p>
-            <div className="flex gap-6">
-              <Link to="/privacy" className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-red-500 transition-colors">
-                Privacy Policy
-              </Link>
-              <Link to="/terms" className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-red-500 transition-colors">
-                Terms of Service
-              </Link>
-              <Link to="/sitemap" className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-red-500 transition-colors">
-                Sitemap
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </footer>
   );
 };

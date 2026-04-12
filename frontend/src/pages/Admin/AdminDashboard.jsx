@@ -6,9 +6,11 @@ import {
   Flame, Activity, Zap
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
   const { isDark } = useTheme();
+  const { isAuthenticated, user } = useAuth();
 
   const stats = [
     { label: 'Total Users', value: '42,891', icon: Users, change: '+12%', changeType: 'up' },
@@ -36,6 +38,11 @@ const AdminDashboard = () => {
     { label: 'Site Logs', used: '85 GB', percentage: 12 }
   ];
 
+  if (!isAuthenticated || user.role !== 'admin') {
+    return null;
+  }
+
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -48,6 +55,16 @@ const AdminDashboard = () => {
         <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           Real-time performance of the Heart Rhythm ecosystem.
         </p>
+      </div>
+
+      <div>
+        {isAuthenticated && (
+          <>
+          <p className='text-xl font-medium'>Welcome, {user.name}!</p>
+          <p className='ml-4 text-xl'>to the Admin Dashbord</p>
+
+          </>
+        )}
       </div>
 
       {/* Stats Grid */}

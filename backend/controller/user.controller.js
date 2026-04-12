@@ -6,6 +6,7 @@ import config from '../config/config.js';
 import nodemailer from 'nodemailer';
 import otpModel from '../models/otp.model.js';
 import { generateOTP, sendOTPEmail } from '../service/registred.email.service.js'
+import userBinModel from "../models/userBin.model.js";
 
 
 
@@ -16,7 +17,7 @@ export const register = async (req, res) => {
 
     const isAlreadyRegistered = await userModel.findOne({ email });
     if(isAlreadyRegistered){
-        res.status(409).json({
+        return res.status(409).json({
             message:'User already registered'
         
         })
@@ -43,6 +44,7 @@ export const register = async (req, res) => {
 
     res.status(201).json({
         message:'User registered successfully',
+        success:true,
         user:{
             id: user._id,
             name: user.name,
@@ -58,7 +60,9 @@ export const register = async (req, res) => {
 
    } catch (error) {
      res.status(500).json({
-        message:'Internal server error'
+        message:'Internal server error',
+        error: error.message
+     
      })
 
    }
@@ -122,7 +126,7 @@ export const verifySellerOTP = async (req, res) => {
         const { email, otp, tempToken } = req.body;
         
         // Verify OTP
-        const otpRecord = await otpModel.findOne({ email, otp, type: 'seller_register' });
+        const otpRecord = await otpModel.findOne({ email, otp,  });
         
         if (!otpRecord) {
             return res.status(400).json({
@@ -708,3 +712,243 @@ export const getAllSeller = async (req, res) => {
         });
     }
 }
+
+
+// Delete user for admin
+export const deleteUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const adminId = req.user.id;
+        const adminEmail = req.user.email;
+
+
+        const userToDelete = await userModel.findById(userId);
+        if (!userToDelete) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }   
+
+        if(userToDelete._id.toString() === adminId.toString()){
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot delete your own account'
+            });
+        }
+
+        const movedToBin = await userBinModel.create({
+            originalUserId: userToDelete._id,
+            name: userToDelete.name,
+            email: userToDelete.email,
+            password: userToDelete.password,
+            phone: userToDelete.phone,
+            role: userToDelete.role,
+            isBlocked: userToDelete.isBlocked,
+            status: userToDelete.status,
+            verified: userToDelete.verified,
+            deletedBy: adminId,
+            deletedByEmail: adminEmail,
+            deletedAt: new Date(),
+            deletionReason: req.body.reason || 'Deleted by admin'
+        })
+
+        if (!movedToBin) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to move user to bin'
+            });
+        }
+
+        await tokenBlacklistModel.create({
+            token: userToDelete._id,
+            userId: userToDelete._id
+        });
+
+        await otpModel.deleteMany({ email: userToDelete.email });
+
+        const deletedUser = await userModel.findByIdAndDelete(userId);
+        res.status(200).json({
+            message: 'User deleted successfully',
+            data:{
+                deleteUser:{
+                    id: deletedUser._id,
+                    name: deletedUser.name,
+                    email: deletedUser.email,
+                    role: deletedUser.role,
+                },
+                binRecord:{
+                    id: movedToBin._id,
+                    deletedBy: movedToBin.deletedBy,
+                    deletedByEmail: movedToBin.deletedByEmail,
+                    deletedAt: movedToBin.deletedAt,
+                    deletionReason: movedToBin.deletionReason
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({
+            message: 'Internal server error'
+        });
+    }
+}  
+
+
+// Get all deleted users
+
+export const getDeletedUsers = async (req, res) => {
+    try {
+        const deletedUsers = await userBinModel.find()
+            .populate('deletedBy', 'name email role')
+            .sort({ deletedAt: -1 });
+        
+        res.status(200).json({
+            success: true,
+            message: 'Deleted users fetched successfully',
+            count: deletedUsers.length,
+            deletedUsers: deletedUsers.map(user => ({
+                id: user._id,
+                originalUserId: user.originalUserId,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                deletedBy: user.deletedBy,
+                deletedByRole: user.deletedByRole,
+                deletedAt: user.deletedAt,
+                deletionReason: user.deletionReason
+            }))
+        });
+    } catch (error) {
+        console.error('Get deleted users error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+// Restore user from bin 
+export const restoreUser = async (req, res) => {
+    try {
+        const { binId } = req.params;
+        
+        // Find the deleted user record in bin
+        const deletedUserRecord = await userBinModel.findById(binId);
+        
+        if (!deletedUserRecord) {
+            return res.status(404).json({
+                success: false,
+                message: 'Deleted user record not found in bin'
+            });
+        }
+        
+        // Check if user already exists in main collection
+        const existingUser = await userModel.findOne({ 
+            $or: [
+                { email: deletedUserRecord.email },
+                { _id: deletedUserRecord.originalUserId }
+            ]
+        });
+        
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: 'User already exists in main database. Cannot restore.'
+            });
+        }
+        
+        // Restore user to main collection
+        const restoredUser = await userModel.create({
+            _id: deletedUserRecord.originalUserId,
+            name: deletedUserRecord.name,
+            email: deletedUserRecord.email,
+            password: deletedUserRecord.password,
+            phone: deletedUserRecord.phone,
+            role: deletedUserRecord.role,
+            isBlocked: deletedUserRecord.isBlocked,
+            status: deletedUserRecord.status,
+            verified: deletedUserRecord.verified,
+            createdAt: deletedUserRecord.createdAt,
+            updatedAt: new Date()
+        });
+        
+        // Remove from bin after successful restoration
+        await userBinModel.findByIdAndDelete(binId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'User restored successfully',
+            user: {
+                id: restoredUser._id,
+                name: restoredUser.name,
+                email: restoredUser.email,
+                role: restoredUser.role,
+                status: restoredUser.status
+            }
+        });
+        
+    } catch (error) {
+        console.error('Restore user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+// Permanently delete User
+
+export const permanentDeleteUser = async (req, res) => {
+    try {
+        const { binId } = req.params;
+        const { verificationCode } = req.body;
+        
+        const REQUIRED_CODE = config.PERMANENT_DELETE_CODE || "9565";
+        
+        if (!verificationCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'Verification code is required for permanent deletion'
+            });
+        }
+        
+        if (verificationCode !== REQUIRED_CODE) {
+            return res.status(403).json({
+                success: false,
+                message: 'Invalid verification code. This action has been logged.'
+            });
+        }
+        
+        // Get user details before deletion for audit
+        const userToDelete = await userBinModel.findById(binId);
+        
+        if (!userToDelete) {
+            return res.status(404).json({
+                success: false,
+                message: 'Deleted user record not found in bin'
+            });
+        }
+        
+        // Perform permanent deletion
+        const deletedUser = await userBinModel.findByIdAndDelete(binId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'User permanently deleted from bin',
+            deletedUser: {
+                id: deletedUser._id,
+                name: deletedUser.name,
+                email: deletedUser.email,
+                originalUserId: deletedUser.originalUserId
+            }
+        });
+        
+    } catch (error) {
+        console.error('Permanent delete error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};

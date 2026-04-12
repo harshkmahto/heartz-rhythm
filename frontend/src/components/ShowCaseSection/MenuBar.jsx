@@ -1,11 +1,30 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, ShoppingBag, LayoutDashboard, Home, Sun, Moon, Heart, ShoppingCart, Package, Settings, LogOut } from 'lucide-react';
+import { X, User, ShoppingBag, LayoutDashboard, Home, Sun, Moon, Heart, ShoppingCart, Package, Settings, LogOut, Crown } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import Button from './Buttons';
+import { useAuth } from '../../context/AuthContext';
 
 const MobileMenu = ({ isOpen, onClose }) => {
   const { isDark, toggleTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    onClose();
+    navigate('/auth');
+  }
+    
+  const handleLogin = () => {
+    navigate('/auth');
+    onClose();
+  }
+
+  const sellerHandle = () => {
+    navigate('/seller/become-seller');
+    onClose();
+  }
 
   const mainMenuItems = [
     { path: '/', label: 'Home', icon: Home },
@@ -18,8 +37,24 @@ const MobileMenu = ({ isOpen, onClose }) => {
     { path: '/profile', label: 'My Profile', icon: User },
     { path: '/orders', label: 'My Orders', icon: Package },
     { path: '/cart', label: 'My Cart', icon: ShoppingCart },
-    { path: '/settings', label: 'Settings', icon: Settings },
+    { path: '/wishlist', label: 'Wishlist', icon: Heart },
   ];
+
+  // Fixed profile component - this should return JSX properly
+  const ProfileInfo = () => {
+    if (!user) return null;
+    
+    return (
+      <div className="px-4 py-3 mb-2 bg-red-50 dark:bg-neutral-800 rounded-xl">
+        <div className="font-semibold text-neutral-900 dark:text-white">
+          {user.name}
+        </div>
+        <div className="text-sm text-neutral-500 dark:text-neutral-400">
+          {user.email}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AnimatePresence>
@@ -40,7 +75,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
-            className="fixed top-0 right-0 h-full w-60 sm:w-76 bg-white dark:bg-neutral-900 shadow-2xl z-50 overflow-y-auto"
+            className="fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-neutral-900 shadow-2xl z-50 overflow-y-auto scrollbar-hide"
           >
             {/* Header with Heart Rhythm */}
             <div className="relative bg-gradient-to-r from-red-500 to-red-600 p-6">
@@ -117,61 +152,107 @@ const MobileMenu = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Profile Section */}
-            <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 px-4 mb-3">
-                Account
-              </h3>
-              <div className="flex flex-col gap-1">
-                {profileMenuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={onClose}
-                      className="flex items-center gap-4 px-4 py-3 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-neutral-800 hover:text-red-600 dark:hover:text-neutral-50 transition-all duration-200 group"
-                    >
-                      <div className="w-8">
-                        <Icon size={20} className="group-hover:scale-110 transition-transform group-hover:text-red-500" />
-                      </div>
-                      <span className="font-headline font-medium text-base">{item.label}</span>
-                    </Link>
-                  );
-                })}
+            {/* Profile Section - Only show if authenticated */}
+            {isAuthenticated && (
+              <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 px-4 mb-3">
+                  Account
+                </h3>
+                
+                {/* Display User Info */}
+                <ProfileInfo />
+                
+                {/* Profile Menu Items */}
+                <div className="flex flex-col gap-1">
+                   <div className=''>
+                    {user.role==="admin" && (
+                      <Link to='/admin' className='flex items-center gap-8 ml-1 bg-red-300 hover:bg-red-500 text-black hover:text-white p-2 py-3 rounded-xl'>
+                       <Crown />  Admin
+                      </Link>
+                    )}
+                   </div>
+                   <div className=''>
+                    {user.role==="seller" && (
+                      <Link to='/seller' className='flex items-center gap-8 ml-1 bg-red-300 hover:bg-red-500 text-black hover:text-white p-2 py-3 rounded-xl'>
+                       <Crown /> Seller Dashbord
+                      </Link>
+                    )}
+                   </div>
+                   
+                  {profileMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={onClose}
+                        className="flex items-center gap-4 px-4 py-3 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-neutral-800 hover:text-red-600 dark:hover:text-neutral-50 transition-all duration-200 group"
+                      >
+                        <div className="w-8">
+                          <Icon size={20} className="group-hover:scale-110 transition-transform group-hover:text-red-500" />
+                        </div>
+                        <span className="font-headline font-medium text-base">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
+            )}
+
+            {/* Login/Logout Button */}
+            <div className="flex justify-center items-center  mt-6 mb-8 px-4">
+              {isAuthenticated ? (
+                <Button 
+                  text="Logout"
+                  icon={LogOut}
+                  onClick={handleLogout}
+                  
+                />
+              ) : (
+                <Button 
+                  text="Login" 
+                  onClick={handleLogin}
+                  fullWidth={true}
+                />
+              )}
             </div>
 
-            <div className='flex justify-center items-center mt-10 mb-4'>
-              <Link to='/auth'>
-              <Button text="Login" />
-              </Link>
-            </div>
+            
+            <div className='flex justify-center mb-4'>
+              <Button 
+              text="Become a Seller"
+              fromColor='green-500'
+              toColor='green-700'
+              shadow={false}
+              size='md'
+              onClick={sellerHandle}
+                />
+              
+            </div> 
+            
+            <div className='border-t-2'></div>
 
-            {/* Logout Button */}
-            <div className="p-4">
-              <button
-                onClick={() => {
-                  // Add your logout logic here
-                  console.log('Logout clicked');
-                }}
-                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 group"
-              >
-                <LogOut size={20} className="group-hover:scale-110 transition-transform" />
-                <span className="font-headline font-medium text-base">Logout</span>
-              </button>
-            </div>
-
-            {/* Additional Info */}
-            <div className="p-6 border-t border-neutral-200 dark:border-neutral-800 mt-4">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 text-center">
-                © 2024 Heart Rhythm. All rights reserved.
-              </p>
-            </div>
+          
           </motion.div>
         </>
       )}
+
+  <style>
+    {`
+    .scrollbar-hide::-webkit-scrollbar {
+    display:none
+    }
+    .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    }
+    `}
+  </style>
+
+
     </AnimatePresence>
+
+  
   );
 };
 
