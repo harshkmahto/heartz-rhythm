@@ -25,6 +25,17 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      // Check if token exists in cookies first
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='));
+      
+      if (!token) {
+        // No token, user is not logged in
+        setUser(null);
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+      
       const response = await getMe();
       
       if (response && response.user) {
@@ -35,7 +46,10 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error("Auth check failed:", error);
+      // Don't log error for unauthenticated users
+      if (error.status !== 401 && error.message !== 'Failed to fetch profile') {
+        console.error("Auth check failed:", error);
+      }
       setUser(null);
       setIsAuthenticated(false);
     } finally {

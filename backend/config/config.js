@@ -49,11 +49,10 @@ const cofig = {
     EMAIL_PASS: process.env.EMAIL_PASS,
     PERMANENT_DELETE_CODE: process.env.PERMANENT_DELETE_CODE,
     CLIENT_URL: process.env.CLIENT_URL,
-      IMAGEKIT: {
-        PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
-        PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
-        URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT
-    }
+    IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
+    IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
+    IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
+    
 }
 
 export default cofig;

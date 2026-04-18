@@ -36,7 +36,9 @@ import {
   FileText,
   Crown,
   AlertCircle,
-  Flame
+  Flame,
+  ShieldBanIcon,
+  Trash
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -87,8 +89,10 @@ const AdminPanel = () => {
       subItems: [
         { name: 'All Users', path: '/admin/users/all', icon: Users },
         { name: 'Sellers', path: '/admin/users/sellers', icon: Crown },
-        { name: 'Buyers', path: '/admin/users/buyers', icon: User },
-        { name: 'Verification', path: '/admin/users/verification', icon: Shield }
+        { name: 'Blocked', path: '/admin/users/blocked', icon: ShieldBanIcon },
+        { name: 'Verification', path: '/admin/users/verification', icon: Shield },
+        { name: 'User Status', path: '/admin/users/status', icon: Star },
+        { name: 'User Bin', path: '/admin/users/bin', icon: Trash }
       ]
     },
     { name: 'Products', path: '/admin/products', icon: Package, section: 'products',

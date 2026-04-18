@@ -4,13 +4,16 @@ import { RouterProvider } from 'react-router-dom'
 import router from './router/index.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { SellerProvider } from './context/SellerContext.jsx'
 
 createRoot(document.getElementById('root')).render(
 
    <AuthProvider>
-     <ThemeProvider>
+     <SellerProvider>
+      <ThemeProvider>
         <RouterProvider router={router} />
-     </ThemeProvider>
+      </ThemeProvider>
+     </SellerProvider>
    </AuthProvider> 
   
 )

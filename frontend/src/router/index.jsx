@@ -15,10 +15,10 @@ import AdminPannel from "../pages/Admin/AdminPannel";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import SellerProductManagement from "../pages/Seller/SellerProductManagement";
 import SellerAllProduct from "../pages/Seller/SellerAllProduct";
-import AllUsers from "../pages/Admin/AllUsers";
+import AllUsers from "../pages/Admin/User/AllUsers";
 import OrderManagement from "../pages/Admin/OrderManagement";
 import ProductManagement from "../pages/Admin/ProductManagement";
-import UserManagement from "../pages/Admin/UserManagement";
+import UserManagement from "../pages/Admin/User/UserManagement";
 import WishList from "../pages/Order/WishList";
 import Cart from "../pages/Order/Cart";
 import Checkout from "../pages/Order/Checkout";
@@ -32,6 +32,14 @@ import SellerVerify from "../pages/Auth/SellerVerify";
 import ForgetPassword from "../pages/Auth/ForgetPassword";
 import ProtectedRoute from "../components/Auth/ProtectedRoute";
 import SellerBrandPannel from "../pages/Seller/SellerBrandPannel";
+import SellerDetails from "../pages/Seller/SellerDetails";
+import CreateSellerPannel from "../pages/Seller/CreateSellerPannel";
+import SellerAllDetails from "../pages/Admin/User/SellerAllDetails";
+import AllSellers from "../pages/Admin/User/AllSellers";
+import AllBlockedUsers from "../pages/Admin/User/AllBlockedUsers";
+import UnverifiedUser from "../pages/Admin/User/UnverifiedUser";
+import StatusWiseUser from "../pages/Admin/User/StatusWiseUser";
+import BinUsers from "../pages/Admin/User/BinUsers";
 
 
 
@@ -80,7 +88,10 @@ const router = createBrowserRouter([
             {index: true, element:<SellerDashboard/>},
             {path: 'products', element:<SellerProductManagement/>},
             {path: 'products/all', element:<SellerAllProduct/>},
+            {path: 'create/seller-pannel', element:<CreateSellerPannel/>},
             {path: 'aboutme', element:<SellerBrandPannel/>},
+            {path: 'seller-details', element:<SellerDetails/>},
+            
         ],
     },
 
@@ -92,6 +103,12 @@ const router = createBrowserRouter([
             {path: 'users', element:<UserManagement/>},
             {path: 'orders', element:<OrderManagement/>},
             {path: 'products', element:<ProductManagement/>},
+            {path: 'users/sellers', element:<AllSellers/>},
+            {path: 'seller-profile/:userId', element:<SellerAllDetails/>},
+            {path: 'users/blocked', element:<AllBlockedUsers/>},
+            {path: 'users/verification', element:<UnverifiedUser/>},
+            {path: 'users/status', element:<StatusWiseUser/>},
+            {path: 'users/bin', element:<BinUsers/>},
         ],
     }
 ])

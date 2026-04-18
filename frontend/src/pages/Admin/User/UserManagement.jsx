@@ -1,5 +1,5 @@
 import React from 'react'
-import RoundedText from '../../components/ShowCaseSection/RoundedText'
+import RoundedText from '../../../components/ShowCaseSection/RoundedText'
 
 const UserManagement = () => {
   return (

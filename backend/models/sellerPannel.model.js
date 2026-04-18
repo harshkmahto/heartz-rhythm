@@ -9,9 +9,12 @@ const sellerPannelSchema = new mongoose.Schema({
     },
 
     coverImage: { type: String },
+    coverImageId: { type: String },
     logo: { type: String },
+    logoId: { type: String },
     previewImage: { type: [ String ] },
-    brandyName: { type: String, required: true },
+    previewImageIds: { type: [String] },
+    brandName: { type: String, required: true },
     brandDescription: { type: String },
     brandCategory: { type: String },
     brandSubCategory: { type: String },
@@ -46,6 +49,7 @@ const sellerPannelSchema = new mongoose.Schema({
 
 },    { timestamps: true })
 
+sellerPannelSchema.index({ user: 1 }, { unique: true });
 
 const SellerPannel = mongoose.model('SellerPannel', sellerPannelSchema);
 export default SellerPannel;

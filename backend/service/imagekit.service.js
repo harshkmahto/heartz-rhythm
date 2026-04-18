@@ -1,13 +1,13 @@
-// service/imagekit.service.js
 import ImageKit from "imagekit";
 import config from "../config/config.js";
 
-// Initialize ImageKit
+
 const imagekit = new ImageKit({
-    publicKey: config.IMAGEKIT.PUBLIC_KEY,
-    privateKey: config.IMAGEKIT.PRIVATE_KEY,
-    urlEndpoint: config.IMAGEKIT.URL_ENDPOINT
+    publicKey: config.IMAGEKIT_PUBLIC_KEY,
+    privateKey: config.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: config.IMAGEKIT_URL_ENDPOINT
 });
+
 
 // Upload image to ImageKit
 export const uploadImage = async (file, folder = "profiles") => {
@@ -37,6 +37,7 @@ export const uploadImage = async (file, folder = "profiles") => {
     }
 };
 
+
 // Delete image from ImageKit
 export const deleteImage = async (fileId) => {
     try {
@@ -54,7 +55,8 @@ export const deleteImage = async (fileId) => {
     }
 };
 
-// Update image (delete old, upload new)
+
+// Update image 
 export const updateImage = async (oldFileId, newFile, folder = "profiles") => {
     try {
         // Delete old image if exists
@@ -76,15 +78,15 @@ export const updateImage = async (oldFileId, newFile, folder = "profiles") => {
 export const getOptimizedImageUrl = (url, width = 200, height = 200) => {
     if (!url) return null;
     
-    // Add ImageKit transformations to URL
+
     const transformation = `tr:w-${width},h-${height},c-maintain_ratio`;
     
-    // If URL already has transformations, handle accordingly
+   
     if (url.includes('tr:')) {
         return url;
     }
     
-    // Add transformation to URL
+
     const urlParts = url.split('/upload/');
     if (urlParts.length === 2) {
         return `${urlParts[0]}/upload/${transformation}/${urlParts[1]}`;

@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
-import { User, Settings, Package, Heart, LogOut, ChevronRight, Edit3, Guitar, Music, Calendar, ShoppingCart, X, Check, ShoppingBag, Crown, CrownIcon } from 'lucide-react';
+import { User, Settings, Package, Heart, LogOut, ChevronRight, Edit3, Guitar, Music, Calendar, ShoppingCart, X, Check, ShoppingBag, Crown, CrownIcon, Mail, Phone, Calendar as CalendarIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import NotLoggedin from '../../components/ShowCaseSection/NotLoggedin';
 import Loader from '../../components/ShowCaseSection/Loader';
 import Button from '../../components/ShowCaseSection/Buttons';
+import EditProfile from '../../components/Auth/UpdateProfile'; // Import your EditProfile component
+import UpdateProfilePicture from '../../components/Auth/UpateProfilePicture';
+import ResetPassword from '../../components/Auth/ResetPassword';
+
+
 
 const Profile = () => {
   const { user, isAuthenticated, loading, logout, logoutFromAllDevices } = useAuth();
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-  });
+ 
+  const [showEditPopup, setShowEditPopup] = useState(false);
+  const [profilePopup, setProfilePopup] = useState(false);
+  const [resetPopup, setResetPopup] = useState(false);
 
   const logoutHandle = async () => {
     await logout();
@@ -26,33 +29,33 @@ const Profile = () => {
     navigate('/');
   }
 
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
   const handleUpdateProfile = () => {
-    setIsEditing(true);
+    setShowEditPopup(true);
   };
 
-  const handleSaveChanges = () => {
-    // Here you would make API call to update profile
-    setIsEditing(false);
-   
+   const handleClosePopup = () => {
+    setShowEditPopup(false);
   };
 
-  const handleCancel = () => {
-    setFormData({
-      name: user?.name || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-    });
-    setIsEditing(false);
+
+  const handleProfilePicture = () => {
+    setProfilePopup(true);
   };
 
+  const handleCloseProfilePopup = () => {
+    setProfilePopup(false);
+
+  }
+
+  const handleResetPassword = () => {
+    setResetPopup(true);
+  };
+
+  const handleCloseResetPopup = () => {
+    setResetPopup(false);
+  };
+
+ 
   if (loading) {
     return <Loader fullScreen text="Loading your profile..." />;
   }
@@ -70,6 +73,45 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:bg-black dark:from-black dark:via-black dark:to-black">
+      {/* Edit Profile Popup */}
+      {showEditPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-white/10 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl">
+           
+            <EditProfile 
+              user={user}    
+              onClose={handleClosePopup}
+            />
+          </div>
+        </div>
+      )}
+
+       {profilePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl">
+           
+            <UpdateProfilePicture 
+              user={user}    
+              onClose={handleCloseProfilePopup}
+            />
+          </div>
+        </div>
+      )}
+
+      {resetPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl">
+           
+            <ResetPassword
+              user={user}    
+              onClose={handleCloseResetPopup}
+            />
+          </div>
+        </div>
+      )}
+
+
+
       <main className="pt-10 md:pt-20 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
         {/* Header Section */}
         <header className="mb-12 relative">
@@ -91,54 +133,72 @@ const Profile = () => {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Sidebar */}
+          {/* Sidebar - Profile Card */}
           <aside className="lg:col-span-4 xl:col-span-3 space-y-6">
-            {/* Profile Card */}
+            {/* Profile Card - Enhanced */}
             <div className="bg-white dark:bg-black rounded-2xl shadow-xl border border-gray-200 dark:border-red-900 p-6 text-center relative overflow-hidden group">
               <div className="absolute -top-20 -right-20 w-40 h-40 bg-red-500/10 rounded-full blur-3xl group-hover:bg-red-500/20 transition-all" />
               
-              <div className="relative w-28 h-28 mx-auto mb-4">
+              {/* Profile Image - Increased Size */}
+              <div className="relative w-36 h-36 mx-auto mb-5">
                 <div className="w-full h-full rounded-full border-4 border-red-500/30 overflow-hidden group-hover:border-red-500 transition-all duration-300">
                   <img 
                     className="w-full h-full object-cover" 
-                    src="https://images.unsplash.com/photo-1546527868-ccb7ee7dfa6a?w=150&h=150&fit=crop" 
+                    src={user?.profilePicture?.url || "https://images.unsplash.com/photo-1546527868-ccb7ee7dfa6a?w=150&h=150&fit=crop"} 
                     alt="Profile" 
                   />
                 </div>
-                <button className="absolute bottom-0 right-0 p-2 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors">
-                  <Edit3 size={14} />
+                <button 
+                  onClick={handleProfilePicture}
+                  className="absolute bottom-0 right-0 p-2 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors"
+                >
+                  <Edit3 size={16} />
                 </button>
               </div>
               
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{user?.name || "Guitarist"}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{user?.email}</p>
+              {/* Name */}
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{user?.name || "Guitarist"}</h3>
               
-              <div className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 dark:bg-red-900/20 rounded-full">
-                <Music size={12} className="text-red-600 dark:text-red-400" />
-                <span className="text-xs text-red-600 dark:text-red-400 font-medium">
-                  {user?.role==='seller'? 'Seller' : 'Guitarist'}
+              {/* Status Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-full mb-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-semibold text-green-600 dark:text-green-400 uppercase">
+                  Status: {user?.status || "Active"}
                 </span>
               </div>
-              {user?.role==='admin' && (
-                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 dark:bg-red-900/20 rounded-full ml-2">
-                  <Crown size={12} className="text-red-600 dark:text-red-400" />
-                <span className="text-xs text-red-600 dark:text-red-400 font-medium ">
-                  
-                   Admin
+              
+              {/* Role Badges */}
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 rounded-full">
+                  <Music size={14} className="text-red-600 dark:text-red-400" />
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                    {user?.role === 'seller' ? 'Seller' : 'Guitarist'}
                   </span>
+                </div>
+                
+                {user?.role === 'admin' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-full">
+                    <Crown size={14} className="text-purple-600 dark:text-purple-400" />
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                      Admin
+                    </span>
                   </div>
                 )}
-
-               <div className='mt-2'>
-                <span className='uppercase text-sm text-black dark:text-white bg-green-600 dark:bg-green-500 p-1 rounded-2xl mt-2'>Status: { user.status }</span>
               </div>
 
-              <div className='mt-2'>
-                <span className='uppercase text-sm text-gray-800 dark:text-gray-400'>Member Since:{ user.createdAt.slice(0, 10)}</span>
+              {/* Member Since */}
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-red-900/30">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long',
+                    day: 'numeric'
+                  }) : 'N/A'}
+                </p>
               </div>
             </div>
 
-            {/* Navigation Menu */}
+            {/* Navigation Menu - Same as before */}
             <nav className="bg-white dark:bg-black rounded-2xl shadow-xl border border-gray-200 dark:border-red-900 p-4">
               <div className="space-y-1">
                 <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold transition-all">
@@ -149,28 +209,30 @@ const Profile = () => {
                   <ChevronRight size={16} />
                 </button>
 
-                {user?.role==='seller' && (
+                {user?.role === 'seller' && (
                   <button 
-                  onClick={() => navigate('/seller')}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all">
-                  <div className="flex items-center gap-3 cursor-pointer">
-                    <CrownIcon size={18} />
-                    <span>Seller Dashbord</span>
-                  </div>
-                  <ChevronRight size={16} />
-                </button>
+                    onClick={() => navigate('/seller')}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all"
+                  >
+                    <div className="flex items-center gap-3 cursor-pointer">
+                      <CrownIcon size={18} />
+                      <span>Seller Dashboard</span>
+                    </div>
+                    <ChevronRight size={16} />
+                  </button>
                 )}
 
-                {user?.role==='admin' && (
+                {user?.role === 'admin' && (
                   <button 
-                  onClick={() => navigate('/admin')}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all">
-                  <div className="flex items-center gap-3 cursor-pointer">
-                    <Crown size={18} />
-                    <span>Admin Pannel</span>
-                  </div>
-                  <ChevronRight size={16} />
-                </button>
+                    onClick={() => navigate('/admin')}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all"
+                  >
+                    <div className="flex items-center gap-3 cursor-pointer">
+                      <Crown size={18} />
+                      <span>Admin Panel</span>
+                    </div>
+                    <ChevronRight size={16} />
+                  </button>
                 )}
                 
                 <button 
@@ -206,7 +268,10 @@ const Profile = () => {
                   <ChevronRight size={16} />
                 </button>
                 
-                <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all">
+                <button 
+                  onClick={() => navigate('/shop')}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all"
+                >
                   <div className="flex items-center gap-3 cursor-pointer">
                     <ShoppingBag size={18} />
                     <span>Shop</span>
@@ -243,79 +308,76 @@ const Profile = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-8 xl:col-span-9 space-y-8">
-            {/* Account Details */}
+            {/* Personal Details Card - Simple Display Card */}
             <div className="bg-white dark:bg-black rounded-2xl shadow-xl border border-gray-200 dark:border-red-900/30 p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3 border-b border-gray-200 dark:border-red-900/30 pb-4">
-                <User size={24} className="text-red-600" />
-                Personal Details
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-wider text-gray-700 dark:text-gray-400 font-semibold">
-                    Full Name
-                  </label>
-                  <input 
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-red-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    type="text" 
-                    disabled={!isEditing}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-wider text-gray-700 dark:text-gray-400 font-semibold">
-                    Email Address
-                  </label>
-                  <input 
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-red-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    type="email" 
-                    disabled={!isEditing}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-wider text-gray-700 dark:text-gray-400 font-semibold">
-                    Phone Number
-                  </label>
-                  <input 
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-red-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    type="tel" 
-                    disabled={!isEditing}
-                  />
-                </div>
-                
+              <div className="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-red-900/30 pb-4">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                  <User size={24} className="text-red-600" />
+                  Personal Details
+                </h2>
+                <Button 
+                  text="Update Profile" 
+                  onClick={handleUpdateProfile}
+                  fromColor="red-600"
+                  toColor="red-700"
+                  shadowColor="red-500"
+                  size="sm"
+                />
               </div>
               
-              <div className="mt-8 flex justify-end gap-3">
-                {!isEditing ? (
-                  <Button 
-                    text="Update Profile" 
-                    onClick={handleUpdateProfile}
-                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
-                  />
-                ) : (
-                  <>
-                    <Button 
-                      text="Cancel" 
-                      onClick={handleCancel}
-                      className="bg-gray-500 hover:bg-gray-600"
-                    />
-                    <Button 
-                      text="Save Changes" 
-                      onClick={handleSaveChanges}
-                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-                    />
-                  </>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Full Name */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-wider text-gray-700 dark:text-gray-400 font-semibold flex items-center gap-2">
+                    <User size={14} />
+                    Full Name
+                  </label>
+                  <p className="text-gray-900 dark:text-white py-3 px-4 bg-gray-50 dark:bg-black/50 rounded-xl border border-gray-200 dark:border-red-600">
+                    {user?.name || 'Not provided'}
+                  </p>
+                </div>
+                
+                {/* Email Address */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-wider text-gray-700 dark:text-gray-400 font-semibold flex items-center gap-2">
+                    <Mail size={14} />
+                    Email Address
+                  </label>
+                  <p className="text-gray-900 dark:text-white py-3 px-4 bg-gray-50 dark:bg-black/50 rounded-xl border border-gray-200 dark:border-red-600">
+                    {user?.email || 'Not provided'}
+                  </p>
+                </div>
+                
+                {/* Phone Number */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-wider text-gray-700 dark:text-gray-400 font-semibold flex items-center gap-2">
+                    <Phone size={14} />
+                    Phone Number
+                  </label>
+                  <p className="text-gray-900 dark:text-white py-3 px-4 bg-gray-50 dark:bg-black/50 rounded-xl border border-gray-200 dark:border-red-600">
+                    {user?.phone || 'Not provided'}
+                  </p>
+                </div>
+
+                {/* Account Since */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-wider text-gray-700 dark:text-gray-400 font-semibold flex items-center gap-2">
+                    <CalendarIcon size={14} />
+                    Account Since
+                  </label>
+                  <p className="text-gray-900 dark:text-white py-3 px-4 bg-gray-50 dark:bg-black/50 rounded-xl border border-gray-200 dark:border-red-600">
+                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 'N/A'}
+                  </p>
+                </div>
+
+              </div>
+              <div className='flex justify-end items-end mt-4 '>
+              <Button text="Reset Password" size='sm'
+              onClick={handleResetPassword} />
               </div>
             </div>
 
@@ -347,7 +409,9 @@ const Profile = () => {
                 <Button 
                   text="Start Shopping" 
                   onClick={() => navigate('/shop')}
-                  className="bg-gradient-to-r from-red-600 to-red-700"
+                  fromColor="red-600"
+                  toColor="red-700"
+                  shadowColor="red-500"
                 />
               </div>
             </div>

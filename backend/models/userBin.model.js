@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const userBinSchema = new mongoose.Schema({
-    // Original user data
+   
     originalUserId: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,

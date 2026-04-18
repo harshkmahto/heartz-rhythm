@@ -34,13 +34,7 @@ export const authorized = async (req, res, next) => {
             });
         }
         
-        if(decode.verify === false){
-            res.clearCookie("token");
-            return res.status(403).json({
-                success: false,
-                message: 'Forbidden: Please verify your email to access this resource'
-            });
-        }
+        
 
         if(decode.isBlocked === true){
             res.clearCookie("token");
@@ -50,12 +44,7 @@ export const authorized = async (req, res, next) => {
             });
         }
 
-         if(decode.status === "pending" || decode.status === "review"){
-            return res.status(403).json({
-                success: false,
-                message: 'Forbidden: Your seller account is still under review. Please wait for approval to access this resource.'
-            });
-        }
+         
         
         req.user = decode;
         next();
@@ -73,7 +62,7 @@ export const authorized = async (req, res, next) => {
 // Seller middleware - Only users with role "seller" can access
 export const isSeller = async (req, res, next) => {
     try {
-        // First, check if user is authenticated
+        
         const token = req.cookies?.token;
         
         if (!token) {
@@ -86,7 +75,7 @@ export const isSeller = async (req, res, next) => {
         // Verify token
         const decode = jwt.verify(token, config.JWT_SECRET);
         
-        // Check if user role is seller
+        
         if (decode.role !== 'seller') {
             return res.status(403).json({
                 success: false,
@@ -200,4 +189,85 @@ export const isAdmin = async (req, res, next) => {
             message: 'Internal server error'
         });
     }
+};
+
+
+
+export const protect = async (req, res, next) => {
+    try {
+        const token = req.cookies?.token;
+        
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized: No token provided'
+            });
+        }
+        
+        // Check blacklist
+        const isBlacklisted = await tokenBlacklistModel.findOne({ token });
+        if (isBlacklisted) {
+            res.clearCookie("token");
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized: Token invalidated'
+            });
+        }
+        
+        // Verify token
+        const decode = jwt.verify(token, config.JWT_SECRET);
+        if (!decode) {
+            res.clearCookie("token");
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized: Token invalidated'
+            });
+        }
+        
+        // Check if account is blocked
+        if(decode.isBlocked === true){
+            res.clearCookie("token");
+            return res.status(403).json({
+                success: false,
+                message: 'Forbidden: Your account has been blocked. Please contact support for more information.'
+            });
+        }
+        
+        
+        if(decode.verify === false){
+            return res.status(403).json({
+                success: false,
+                message: 'Forbidden: Please verify your email to access this resource'
+            });
+        }
+        
+                
+            if(decode.status === "pending" || decode.status === "review"){
+                return res.status(403).json({
+                    success: false,
+                    message: 'Forbidden: Your  account is not active. Please contact support.'
+                });
+            }
+       
+
+        
+        req.user = decode;
+        next();
+        
+    } catch (error) {
+        console.error('Protected middleware error:', error);
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized: Token expired'
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+
 };

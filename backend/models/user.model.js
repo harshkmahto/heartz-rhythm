@@ -17,6 +17,18 @@ const userSchema = new mongoose.Schema ({
         required:[true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters']
     },
+    profilePicture:{
+        url: {
+            type: String,
+        },
+        fileId: {
+            type: String,
+        },
+        thumbnailUrl:{
+            type:String,
+        },
+        
+    },
     role:{
         type:String,
         enum:['customer', 'seller', 'admin'], 

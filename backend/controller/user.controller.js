@@ -7,7 +7,8 @@ import nodemailer from 'nodemailer';
 import otpModel from '../models/otp.model.js';
 import { generateOTP, sendOTPEmail } from '../service/registred.email.service.js'
 import userBinModel from "../models/userBin.model.js";
-
+import { uploadImage, deleteImage, updateImage } from "../service/imagekit.service.js";
+import SellerPannel from "../models/sellerPannel.model.js"
 
 
 
@@ -162,7 +163,7 @@ export const verifySellerOTP = async (req, res) => {
             phone: userData.phone,
             role: 'seller',
             isBlocked: false,
-            status: 'pending', 
+            status: 'active', 
             verified: true 
         });
         
@@ -271,9 +272,13 @@ export const login = async (req, res) => {
 
         const token = jwt.sign({
             id:user._id,
-            role:user.role
+            email:user.email,
+            role:user.role,
+            verify:user.verified,
+            isBlocked:user.isBlocked,
+            status:user.status,
         }, config.JWT_SECRET, {
-            expiresIn: '1d'
+            expiresIn: '7d'
         });
 
         res.cookie("token", token)
@@ -284,6 +289,8 @@ export const login = async (req, res) => {
                 id: user._id,
                 username: user.name,
                 email: user.email,
+                phone: user.phone,
+                profilePicture: user.profilePicture,
                 role: user.role,
                 isBlocked: user.isBlocked,
                 status: user.status,
@@ -336,26 +343,30 @@ export const logoutallDevice = async (req, res)=>{
     })
 }
 
+
+
 export const updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
         const { name, phone } = req.body;
-
-        if (!name && !phone) {
+        
+        
+        if (!name && !phone ) {
             return res.status(400).json({
                 success: false,
-                message: 'At least one field is required to update'
+                message: 'At least one field e is required to update'
             });
         }
 
         const updateData = {};
         if (name) updateData.name = name;
-        if (phone) updateData.phone = phone;
+        if (phone) updateData.phone = Number(phone);
 
-        // FIXED: Changed "uopdateData" to "updateData"
+
+        // Update user in database
         const updatedUser = await userModel.findByIdAndUpdate(
             userId,
-            updateData,  // ← This was the bug
+            updateData,
             {
                 new: true,
                 runValidators: true
@@ -393,6 +404,135 @@ export const updateProfile = async (req, res) => {
         });
     }
 };
+
+
+export const updateProfilePicture = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Check if file exists
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No image file provided'
+            });
+        }
+
+        // Get current user to check existing profile picture
+        const currentUser = await userModel.findById(userId).select('profilePicture');
+        
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        let uploadResult;
+        
+        if (currentUser.profilePicture?.fileId) {
+            uploadResult = await updateImage(
+                currentUser.profilePicture.fileId,
+                req.file,
+                "hertzrhyth/profiles"
+            );
+        } else {
+            // Upload new profile picture
+            uploadResult = await uploadImage(req.file, "hertzrhyth/profiles");
+        }
+        
+        if (!uploadResult.success) {
+            return res.status(400).json({
+                success: false,
+                message: 'Failed to upload profile picture'
+            });
+        }
+
+        // Update user with new profile picture
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            {
+                profilePicture: {
+                    url: uploadResult.url,
+                    fileId: uploadResult.fileId,
+                    thumbnailUrl: uploadResult.thumbnailUrl
+                }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        ).select('-password');
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile picture updated successfully',
+            user: {
+                id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                phone: updatedUser.phone,
+                profilePicture: updatedUser.profilePicture,
+                role: updatedUser.role,
+                isBlocked: updatedUser.isBlocked,
+                status: updatedUser.status,
+                createdAt: updatedUser.createdAt,
+                updatedAt: updatedUser.updatedAt
+            }
+        });
+
+    } catch (error) {
+        console.error('Update profile picture error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};
+
+
+export const deleteProfilePicture = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const user = await userModel.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+        
+        if (!user.profilePicture?.fileId) {
+            return res.status(400).json({
+                success: false,
+                message: 'No profile picture to delete'
+            });
+        }
+        
+        // Delete from ImageKit
+        await deleteImage(user.profilePicture.fileId);
+        
+        // Remove profile picture from database
+        user.profilePicture = undefined;
+        await user.save();
+        
+        res.status(200).json({
+            success: true,
+            message: 'Profile picture deleted successfully'
+        });
+        
+    } catch (error) {
+        console.error('Delete profile picture error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
 
 export const forgetPassword = async (req, res) => {
     try {
@@ -616,6 +756,8 @@ export const getProfile = async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                profilePicture: user.profilePicture,
                 role: user.role,
                 isBlocked: user.isBlocked,
                 status: user.status,
@@ -632,6 +774,10 @@ export const getProfile = async (req, res) => {
 }
 
 
+
+
+
+
 //@get all user for admin 
 export const getAllUser = async (req, res) => {
     try {
@@ -642,8 +788,11 @@ export const getAllUser = async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                profilePicture: user.profilePicture,
                 role: user.role,
                 isBlocked: user.isBlocked,
+                verified: user.verified,
                 status: user.status,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt
@@ -673,8 +822,11 @@ export const getSingleUser = async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                profilePicture: user.profilePicture,
                 role: user.role,
                 isBlocked: user.isBlocked,
+                verified: user.verified,
                 status: user.status,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt
@@ -698,8 +850,11 @@ export const getAllSeller = async (req, res) => {
                 id: seller._id,
                 name: seller.name,  
                 email: seller.email,
+                phone: seller.phone,
+                profilePicture: seller.profilePicture,
                 role: seller.role,
                 isBlocked: seller.isBlocked,
+                verified: seller.verified,
                 status: seller.status,
                 createdAt: seller.createdAt,
                 updatedAt: seller.updatedAt
@@ -714,13 +869,22 @@ export const getAllSeller = async (req, res) => {
 }
 
 
-// Delete user for admin
+// Delete user for admin - SIMPLE VERSION
 export const deleteUser = async (req, res) => {
     try {
         const userId = req.params.id;
         const adminId = req.user.id;
-        const adminEmail = req.user.email;
+        const reason = req.body.reason;
 
+        // Get admin email from database - SIMPLE!
+        const admin = await userModel.findById(adminId).select('email');
+        
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: 'Admin not found'
+            });
+        }
 
         const userToDelete = await userModel.findById(userId);
         if (!userToDelete) {
@@ -747,11 +911,13 @@ export const deleteUser = async (req, res) => {
             isBlocked: userToDelete.isBlocked,
             status: userToDelete.status,
             verified: userToDelete.verified,
+            createdAt: userToDelete.createdAt,
+            updatedAt: userToDelete.updatedAt,
             deletedBy: adminId,
-            deletedByEmail: adminEmail,
+            deletedByEmail: admin.email,  
             deletedAt: new Date(),
-            deletionReason: req.body.reason || 'Deleted by admin'
-        })
+            deletionReason: reason || 'Deleted by admin'
+        });
 
         if (!movedToBin) {
             return res.status(500).json({
@@ -768,20 +934,19 @@ export const deleteUser = async (req, res) => {
         await otpModel.deleteMany({ email: userToDelete.email });
 
         const deletedUser = await userModel.findByIdAndDelete(userId);
+        
         res.status(200).json({
+            success: true,
             message: 'User deleted successfully',
-            data:{
-                deleteUser:{
+            data: {
+                deleteUser: {
                     id: deletedUser._id,
                     name: deletedUser.name,
                     email: deletedUser.email,
                     role: deletedUser.role,
                 },
-                binRecord:{
+                binRecord: {
                     id: movedToBin._id,
-                    deletedBy: movedToBin.deletedBy,
-                    deletedByEmail: movedToBin.deletedByEmail,
-                    deletedAt: movedToBin.deletedAt,
                     deletionReason: movedToBin.deletionReason
                 }
             }
@@ -789,10 +954,147 @@ export const deleteUser = async (req, res) => {
     } catch (error) {
         console.error('Delete user error:', error);
         res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};
+
+
+// Update User Role, Status, Block Status, Verification
+export const updateUserByAdmin = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const adminId = req.user.id;
+        const { role, isBlocked, verified, status } = req.body;
+        
+        // Find user
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+        
+        // Prevent admin from modifying themselves
+        if (userId === adminId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Admin cannot modify their own account through this endpoint'
+            });
+        }
+        
+        // Track what changes are being made
+        const updates = {};
+        
+        // Update role with validation
+        if (role !== undefined) {
+            if (!['customer', 'seller', 'admin'].includes(role)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid role. Allowed: customer, seller, admin'
+                });
+            }
+            
+            // Prevent demoting the last admin
+            if (user.role === 'admin' && role !== 'admin') {
+                const adminCount = await userModel.countDocuments({ role: 'admin' });
+                if (adminCount <= 1) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Cannot demote the last admin user'
+                    });
+                }
+            }
+            
+            user.role = role;
+            updates.role = role;
+        }
+        
+        // Update status with validation
+        if (status !== undefined) {
+            if (!['active', 'pending', 'review'].includes(status)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid status. Allowed: active, pending, review'
+                });
+            }
+            user.status = status;
+            updates.status = status;
+        }
+        
+        // Update block status
+        if (isBlocked !== undefined) {
+            if (typeof isBlocked !== 'boolean') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'isBlocked must be a boolean value'
+                });
+            }
+            user.isBlocked = isBlocked;
+            updates.isBlocked = isBlocked;
+            
+            // If blocking, invalidate their tokens
+            if (isBlocked === true) {
+                await tokenBlacklistModel.create({
+                    token: user._id,
+                    userId: user._id,
+                    reason: req.body.blockReason || 'User blocked by admin'
+                });
+            }
+        }
+        
+        // Update verification status
+        if (verified !== undefined) {
+            if (typeof verified !== 'boolean') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'verified must be a boolean value'
+                });
+            }
+            user.verified = verified;
+            updates.verified = verified;
+        }
+        
+        // Check if any updates were made
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No valid fields to update. Provide role, isBlocked, verified, or status'
+            });
+        }
+        
+        await user.save();
+        
+        res.status(200).json({
+            success: true,
+            message: 'User updated successfully',
+            updates: updates,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                isBlocked: user.isBlocked,
+                status: user.status,
+                verified: user.verified,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            }
+        });
+        
+    } catch (error) {
+        console.error('Admin update user error:', error);
+        return res.status(500).json({
+            success: false,
             message: 'Internal server error'
         });
     }
-}  
+};
+
 
 
 // Get all deleted users
@@ -813,6 +1115,11 @@ export const getDeletedUsers = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                status: user.status,
+                isBlocked: user.isBlocked,
+                verified: user.verified,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
                 deletedBy: user.deletedBy,
                 deletedByRole: user.deletedByRole,
                 deletedAt: user.deletedAt,
@@ -832,6 +1139,7 @@ export const getDeletedUsers = async (req, res) => {
 export const restoreUser = async (req, res) => {
     try {
         const { binId } = req.params;
+        const { isBlocked, status, verified } = req.body;
         
         // Find the deleted user record in bin
         const deletedUserRecord = await userBinModel.findById(binId);
@@ -858,7 +1166,7 @@ export const restoreUser = async (req, res) => {
             });
         }
         
-        // Restore user to main collection
+       
         const restoredUser = await userModel.create({
             _id: deletedUserRecord.originalUserId,
             name: deletedUserRecord.name,
@@ -866,14 +1174,14 @@ export const restoreUser = async (req, res) => {
             password: deletedUserRecord.password,
             phone: deletedUserRecord.phone,
             role: deletedUserRecord.role,
-            isBlocked: deletedUserRecord.isBlocked,
-            status: deletedUserRecord.status,
-            verified: deletedUserRecord.verified,
+            isBlocked: isBlocked !== undefined ? isBlocked : deletedUserRecord.isBlocked,
+            status: status || deletedUserRecord.status,
+            verified: verified !== undefined ? verified : deletedUserRecord.verified,
             createdAt: deletedUserRecord.createdAt,
             updatedAt: new Date()
         });
         
-        // Remove from bin after successful restoration
+        
         await userBinModel.findByIdAndDelete(binId);
         
         res.status(200).json({
@@ -884,7 +1192,12 @@ export const restoreUser = async (req, res) => {
                 name: restoredUser.name,
                 email: restoredUser.email,
                 role: restoredUser.role,
-                status: restoredUser.status
+                status: restoredUser.status,
+
+                isBlocked: restoredUser.isBlocked,
+                verified: restoredUser.verified,
+                createdAt: restoredUser.createdAt,
+                updatedAt: restoredUser.updatedAt,
             }
         });
         
@@ -896,6 +1209,52 @@ export const restoreUser = async (req, res) => {
         });
     }
 };
+
+
+// Get single deleted user from bin
+export const getSingleDeletedUser = async (req, res) => {
+    try {
+        const { binId } = req.params;
+        
+        const deletedUser = await userBinModel.findById(binId)
+            .populate('deletedBy', 'name email role');
+        
+        if (!deletedUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Deleted user not found in bin'
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            user: {
+                id: deletedUser._id,
+                originalUserId: deletedUser.originalUserId,
+                name: deletedUser.name,
+                email: deletedUser.email,
+                phone: deletedUser.phone,
+                role: deletedUser.role,
+                isBlocked: deletedUser.isBlocked,
+                status: deletedUser.status,
+                verified: deletedUser.verified,
+                createdAt: deletedUser.createdAt,
+                updatedAt: deletedUser.updatedAt,
+                deletedAt: deletedUser.deletedAt,
+                deletedBy: deletedUser.deletedBy,
+                deletedByEmail: deletedUser.deletedByEmail,
+                deletionReason: deletedUser.deletionReason
+            }
+        });
+    } catch (error) {
+        console.error('Get single deleted user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
 
 // Permanently delete User
 
@@ -946,6 +1305,49 @@ export const permanentDeleteUser = async (req, res) => {
         
     } catch (error) {
         console.error('Permanent delete error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+
+
+//GET SELLER PROFILE
+
+export const getSellerWithPanelById = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // Find seller and check if exists and is seller
+        const seller = await userModel.findById(userId).select('-password');
+        
+        if (!seller) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+        
+        if (seller.role !== 'seller') {
+            return res.status(400).json({
+                success: false,
+                message: 'This user is not a seller'
+            });
+        }
+        
+        // Find seller panel
+        const sellerPanel = await SellerPannel.findOne({ user: userId });
+  
+        res.status(200).json({
+            success: true,
+            seller: seller, 
+            sellerPanel: sellerPanel || null  
+        });
+        
+    } catch (error) {
+        console.error('Get seller with panel error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
