@@ -8,6 +8,11 @@ const sellerPannelSchema = new mongoose.Schema({
         required: true
     },
 
+    product:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+    },
+
     coverImage: { type: String },
     coverImageId: { type: String },
     logo: { type: String },

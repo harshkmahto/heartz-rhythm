@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js'
 import userRoute from './routes/user.routes.js'
 import dns from 'dns';
+import productRoute from './routes/product.routes.js';
 
 
 dns.setServers(["1.1.1.1","8.8.8.8"]);
@@ -25,7 +26,7 @@ app.use(cookieParser());
 
 
 app.use('/user', userRoute)
-
+app.use('product', productRoute )
 
 
 

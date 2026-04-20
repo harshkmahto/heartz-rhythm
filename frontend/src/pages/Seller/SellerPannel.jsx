@@ -80,7 +80,7 @@ const SellerPanel = () => {
     { name: 'Products', path: '/seller/products', icon: Package, section: 'products',
       subItems: [
         { name: 'All Products', path: '/seller/products/all', icon: Grid3x3 },
-        { name: 'Add Product', path: '/seller/products/add', icon: Plus },
+        { name: 'Create Product', path: '/seller/products/create', icon: Plus },
         { name: 'Categories', path: '/seller/products/categories', icon: Tag },
         { name: 'Inventory', path: '/seller/products/inventory', icon: Package }
       ]

@@ -384,7 +384,7 @@ export const getMySellerPanel = async (req, res) => {
 };
 
 
-// Get ALL Seller Panels (for admin to see all brands)
+// Get ALL Seller Panels 
 export const getAllSellerPanels = async (req, res) => {
     try {
         const sellerPanels = await SellerPannel.find()
@@ -406,10 +406,11 @@ export const getAllSellerPanels = async (req, res) => {
 };
 
 
-// Get Single Seller Panel by Panel ID (not user ID)
+// Get Single Seller Panel by Panel ID 
 export const getSellerPanelById = async (req, res) => {
     try {
         const { panelId } = req.params;
+
 
         const sellerPanel = await SellerPannel.findById(panelId)
             .select('coverImage logo previewImage brandName brandDescription brandCategory brandSubCategory brandPhone brandEmail brandSpeciality brandFeatures brandSince sellerName companyLocation createdAt updatedAt');
@@ -421,9 +422,23 @@ export const getSellerPanelById = async (req, res) => {
             });
         }
 
+        
+        const products = await ProductModel.find({ 
+            sellerPanel: panelId,
+            status: 'active'  
+        })
+        .select('title thumbnail images category mrp finalPrice discount ') 
+        .sort({ createdAt: -1 }); 
+
         return res.status(200).json({
             success: true,
-            data: sellerPanel
+            data: {
+                sellerInfo: sellerPanel,
+                products: {
+                    count: products.length,
+                    list: products
+                }
+            }
         });
      
     } catch (err) {
@@ -434,3 +449,4 @@ export const getSellerPanelById = async (req, res) => {
         });
     }
 };
+

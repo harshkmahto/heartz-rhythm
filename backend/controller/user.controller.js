@@ -38,10 +38,14 @@ export const register = async (req, res) => {
         id: user._id,
         role: user.role,
     }, config.JWT_SECRET, {
-        expiresIn: '1d'
+        expiresIn: '7d'
     })
 
-    res.cookie("token", token)
+   res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 
+})
 
     res.status(201).json({
         message:'User registered successfully',
@@ -175,10 +179,14 @@ export const verifySellerOTP = async (req, res) => {
             id: user._id,
             role: user.role,
         }, config.JWT_SECRET, {
-            expiresIn: '1d'
+            expiresIn: '7d'
         });
         
-        res.cookie("token", token);
+        res.cookie("token", token, {
+            httpOnly: true,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        } )
         
         res.status(201).json({
             success: true,

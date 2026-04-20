@@ -4,22 +4,36 @@ const colorSchema = new mongoose.Schema({
     name: { type: String, required: true, trim:true, lowercase:true },
     colorCode: { type: String, required: true,
                  match: /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/ },
-    price: { type: Number, required: true, default: 0, min: 0 },
+    basePrice: { type: Number, required: true, default: 0, min: 0 },
     mrp: { type: Number, required: true, default: 0, min: 0,
             validate: {
                 validator: function(v) {
-                    return v>= this.price; 
+                    return v>= this.basePrice; 
                 },
-                message:`MRP should be greater than or equal to price for color ${this.name}`
+                message:`MRP should be greater than or equal to basePrice `
             },
     },
-    sellingPrice: { type: Number, min: 0 },      
+    finalPrice: { type: Number, min: 0 },      
     stock: { type: Number, required: true, min: 0 },
     isAvailable: { type: Boolean, default: true },       
 
 });
 
 const productSchema = new mongoose.Schema({
+
+      seller: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User', 
+        required: true,
+        index: true 
+    },
+      sellerPanel: {  
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'SellerPannel', 
+        required: true,
+        index: true 
+    },
+
     title: { type: String, required: true, trim: true, index:true },
     subtitle: { type: String, trim: true },
     description: { type: String,  },
@@ -129,5 +143,5 @@ productSchema.index({ 'variants.colorCode': 1 });
 
 
 
-const Product = mongoose.model('Product', productSchema);
-export default Product;
+const ProductModel = mongoose.model('Product', productSchema);
+export default ProductModel;

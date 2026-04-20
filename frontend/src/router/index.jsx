@@ -40,6 +40,7 @@ import AllBlockedUsers from "../pages/Admin/User/AllBlockedUsers";
 import UnverifiedUser from "../pages/Admin/User/UnverifiedUser";
 import StatusWiseUser from "../pages/Admin/User/StatusWiseUser";
 import BinUsers from "../pages/Admin/User/BinUsers";
+import CreateProducts from "../pages/Seller/CreateProducts";
 
 
 
@@ -91,6 +92,7 @@ const router = createBrowserRouter([
             {path: 'create/seller-pannel', element:<CreateSellerPannel/>},
             {path: 'aboutme', element:<SellerBrandPannel/>},
             {path: 'seller-details', element:<SellerDetails/>},
+            {path: 'product/create', element:<CreateProducts/>}
             
         ],
     },
