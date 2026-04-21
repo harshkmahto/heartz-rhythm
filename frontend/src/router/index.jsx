@@ -2,7 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import Home from "../pages/Home";
 import About from "../pages/ShowCase/About";
-import Shop from "../pages/Shop";
+import Shop from "../pages/Products/Shop";
 import BlogPage from "../pages/Blogs/BlogPage";
 import Contact from "../pages/Auth/Contact";
 import Categories from "../pages/ShowCase/Categories";
@@ -17,7 +17,7 @@ import SellerProductManagement from "../pages/Seller/SellerProductManagement";
 import SellerAllProduct from "../pages/Seller/SellerAllProduct";
 import AllUsers from "../pages/Admin/User/AllUsers";
 import OrderManagement from "../pages/Admin/OrderManagement";
-import ProductManagement from "../pages/Admin/ProductManagement";
+import ProductManagement from "../pages/Admin/products/ProductManagement";
 import UserManagement from "../pages/Admin/User/UserManagement";
 import WishList from "../pages/Order/WishList";
 import Cart from "../pages/Order/Cart";
@@ -46,6 +46,11 @@ import SellerUpdateProduct from "../pages/Seller/SellerUpdateProduct";
 import Inventory from "../pages/Seller/Inventory";
 import DraftInventory from "../pages/Seller/DraftInventory";
 import SellerAnalytics from "../pages/Seller/SellerAnalytics";
+import AdminAllProducts from "../pages/Admin/products/AdminAllProducts";
+import PriceUpdation from "../pages/Admin/products/PriceUpdation";
+import ReportedItems from "../pages/Admin/products/ReportedItems";
+import AdminProductDetails from "../pages/Admin/products/AdminProductDetails";
+import ProductAbout from "../components/Products/ProductAbout";
 
 
 
@@ -73,6 +78,7 @@ const router = createBrowserRouter([
             {path: 'category/acoustic', element: <AcousticCategory/>},
             {path: 'category/electric', element: <ElectricCategory/>},
             {path: 'category/semi-acoustic', element: <SemiAcousticCategory/>},
+            {path: 'product/details/:productCategory/:productId',element:<ProductAbout/>},
 
             {path: '*', element: <NotFound/>},
 
@@ -121,6 +127,11 @@ const router = createBrowserRouter([
             {path: 'users/verification', element:<UnverifiedUser/>},
             {path: 'users/status', element:<StatusWiseUser/>},
             {path: 'users/bin', element:<BinUsers/>},
+            {path: 'products/all', element:<AdminAllProducts/>},
+            {path: 'products/price-update', element:<PriceUpdation/>},
+            {path: 'products/report', element:<ReportedItems/>},
+            {path: 'product/details/:productId', element:<AdminProductDetails/>},
+           
         ],
     }
 ])

@@ -8,7 +8,6 @@ import SellerPannel from "../models/sellerPannel.model.js";
 // ---- SELLER -----
 
 // CREATE PRODUCT - BY SELLER
-
 export const createProduct = async (req, res) => {
     try {
         let data = req.body;
@@ -581,26 +580,26 @@ export const getAllProducts = async (req, res) => {
             filter.seller = sellerId;
         }
         
-        // Price range filter (using basePrice from variants - you may need to adjust)
+        
         if (minPrice || maxPrice) {
             filter['variants.basePrice'] = {};
             if (minPrice) filter['variants.basePrice'].$gte = parseInt(minPrice);
             if (maxPrice) filter['variants.basePrice'].$lte = parseInt(maxPrice);
         }
         
-        // Search functionality
+       
         if (search) {
             filter.$text = { $search: search };
         }
         
-        // Sort parameters
+        
         const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
         
-        // Execute queries in parallel with population
+        
         const [products, totalProducts] = await Promise.all([
             ProductModel.find(filter)
-                .populate('seller', 'name email role isBlocked verify') // Populate user details
-                .populate('sellerPanel', 'brandName brandCategory storeName logo coverImage') // Populate seller panel details
+                .populate('seller', 'name email role isBlocked verify') 
+                .populate('sellerPanel', 'brandName brandCategory storeName logo coverImage') 
                 .sort(sort)
                 .skip(skip)
                 .limit(limit)
@@ -608,10 +607,10 @@ export const getAllProducts = async (req, res) => {
             ProductModel.countDocuments(filter)
         ]);
         
-        // Calculate total pages
+       
         const totalPages = Math.ceil(totalProducts / limit);
         
-        // Get additional stats for admin dashboard
+     
         const stats = await Promise.all([
             ProductModel.countDocuments({ status: 'active' }),
             ProductModel.countDocuments({ status: 'draft' }),
@@ -661,9 +660,9 @@ export const getSingleProductForAdmin = async (req, res) => {
         
         // Find product with full population
         const product = await ProductModel.findById(productId)
-            .populate('seller', 'name email phone role isBlocked verify status createdAt') // Full user details
-            .populate('sellerPanel', 'brandName brandDescription brandCategory brandSubCategory storeName logo coverImage sellerName sellerEmail sellerPhone gstNumber panNumber companyLocation') // Full panel details
-            .populate('reviews.user', 'name email') // Populate review users
+            .populate('seller', 'name email phone role isBlocked verify status createdAt') 
+            .populate('sellerPanel', 'brandName brandSince brandDescription brandCategory brandSubCategory  logo coverImage sellerName sellerEmail sellerPhone gstNumber panNumber companyLocation pickupLocation') 
+            .populate('reviews.user', 'name email') 
             .lean();
         
         if (!product) {
@@ -817,50 +816,48 @@ export const getProductStatistics = async (req, res) => {
 
 //---------PUBLIC--------
 
+//---------PUBLIC--------
+
 // GET ALL PRODUCTS FOR PUBLIC
 export const getAllPublicProducts = async (req, res) => {
     try {
-       
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 12; 
+        const limit = parseInt(req.query.limit) || 12;
         const skip = (page - 1) * limit;
         
-       
         const { 
             category, 
-            subCategory,
             brand, 
-            minPrice,
-            maxPrice,
             search,
-            sortBy = 'createdAt',
-            sortOrder = 'desc',
-            featured
+            sortBy = 'newest',
+            color,
+            minPrice,
+            maxPrice
         } = req.query;
         
-
+        // Build filter - only active products
         let filter = { 
-            status: 'active',
-            isAvailable: true
+            status: 'active'
         };
         
         if (category) {
             filter.category = category;
         }
         
-        if (subCategory) {
-            filter.subCategory = subCategory;
-        }
-        
         if (brand) {
             filter.brand = brand;
         }
         
-        if (featured === 'true') {
-            filter.isFeatured = true;
+        // Color filter
+        if (color) {
+            filter['variants'] = {
+                $elemMatch: {
+                    name: { $regex: new RegExp(`^${color}$`, 'i') }
+                }
+            };
         }
         
-        // Price range filter (using basePrice from variants)
+        // Price range filter
         if (minPrice || maxPrice) {
             filter['variants.basePrice'] = {};
             if (minPrice) filter['variants.basePrice'].$gte = parseInt(minPrice);
@@ -872,7 +869,7 @@ export const getAllPublicProducts = async (req, res) => {
             filter.$text = { $search: search };
         }
         
-        // Sort parameters for public
+        // Sort parameters
         let sort = {};
         switch(sortBy) {
             case 'priceLow':
@@ -885,20 +882,16 @@ export const getAllPublicProducts = async (req, res) => {
                 sort = { totalSold: -1 };
                 break;
             case 'newest':
+            default:
                 sort = { createdAt: -1 };
                 break;
-            case 'rating':
-                sort = { 'reviews.rating': -1 };
-                break;
-            default:
-                sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
         }
         
-        // Execute queries with limited data
+        // Execute queries
         const [products, totalProducts] = await Promise.all([
             ProductModel.find(filter)
-                .select('title thumbnail images variants finalPrice mrp discount totalStock totalSold  isFeatured brand category subCategory') 
-                .populate('sellerPanel', 'brandName logo  category subCategory since  sellerName') 
+                .select('title subtitle description features thumbnail images variants discount totalStock category subCategory brand isFeatured mostOrderProduct bestSeller mostLovedProduct mostViewedProduct mostSerchedProduct totalSold viewCount searchCount createdAt')
+                .populate('sellerPanel', 'brandName logo sellerName')
                 .sort(sort)
                 .skip(skip)
                 .limit(limit)
@@ -906,31 +899,43 @@ export const getAllPublicProducts = async (req, res) => {
             ProductModel.countDocuments(filter)
         ]);
         
-        
-        const priceRange = await ProductModel.aggregate([
-            { $match: { status: 'active', isAvailable: true } },
-            { $unwind: '$variants' },
-            { $group: {
-                _id: null,
-                minPrice: { $min: '$variants.basePrice' },
-                maxPrice: { $max: '$variants.basePrice' }
-            }}
-        ]);
-        
-     
-        const categories = await ProductModel.aggregate([
-            { $match: { status: 'active', isAvailable: true } },
-            { $group: { _id: '$category', count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 15 }
-        ]);
-        
-        // Get brands with counts for sidebar
-        const brands = await ProductModel.aggregate([
-            { $match: { status: 'active', isAvailable: true } },
-            { $group: { _id: '$brand', count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 20 }
+        // Get filter options
+        const [categories, brands, colors, priceRange] = await Promise.all([
+            ProductModel.aggregate([
+                { $match: { status: 'active' } },
+                { $group: { _id: '$category', count: { $sum: 1 } } },
+                { $sort: { count: -1 } }
+            ]),
+            ProductModel.aggregate([
+                { $match: { status: 'active' } },
+                { $group: { _id: '$brand', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 20 }
+            ]),
+            ProductModel.aggregate([
+                { $match: { status: 'active' } },
+                { $unwind: '$variants' },
+                { $group: { 
+                    _id: { name: '$variants.name', code: '$variants.colorCode' },
+                    count: { $sum: 1 }
+                }},
+                { $group: {
+                    _id: '$_id.name',
+                    colorCode: { $first: '$_id.code' },
+                    count: { $sum: '$count' }
+                }},
+                { $sort: { count: -1 } },
+                { $limit: 20 }
+            ]),
+            ProductModel.aggregate([
+                { $match: { status: 'active' } },
+                { $unwind: '$variants' },
+                { $group: {
+                    _id: null,
+                    minPrice: { $min: '$variants.basePrice' },
+                    maxPrice: { $max: '$variants.basePrice' }
+                }}
+            ])
         ]);
         
         const totalPages = Math.ceil(totalProducts / limit);
@@ -949,17 +954,19 @@ export const getAllPublicProducts = async (req, res) => {
                     hasPrevPage: page > 1
                 },
                 filters: {
+                    categories: categories.filter(c => c._id),
+                    brands: brands.filter(b => b._id),
+                    colors: colors.filter(c => c._id),
                     priceRange: {
                         min: priceRange[0]?.minPrice || 0,
-                        max: priceRange[0]?.maxPrice || 0
-                    },
-                    categories,
-                    brands
+                        max: priceRange[0]?.maxPrice || 10000
+                    }
                 }
             }
         });
         
     } catch (error) {
+        console.error('Error in getAllPublicProducts:', error);
         return res.status(500).json({
             success: false,
             message: error.message
@@ -972,14 +979,12 @@ export const getSinglePublicProduct = async (req, res) => {
     try {
         const { productId } = req.params;
         
-        // Find product - ONLY ACTIVE
         const product = await ProductModel.findOne({ 
             _id: productId, 
-            status: 'active',
-            isAvailable: true
+            status: 'active'
         })
-        .select('title subtitle description features about showCase thumbnail images gallery preview videos variants finalPrice mrp discount totalStock category subCategory brand replacement return seo isFeatured ') 
-        .populate('sellerPanel', 'brandName brandDescription brandCategory brandSubCategory  logo coverImage sellerName companyLocation brandSince brandSpeciality') 
+        .select('title subtitle description features about showCase thumbnail images gallery preview videos variants discount totalStock category subCategory brand replacement return seo isFeatured mostOrderProduct bestSeller mostLovedProduct mostViewedProduct mostSerchedProduct totalSold viewCount searchCount createdAt updatedAt')
+        .populate('sellerPanel', 'brandName brandDescription brandCategory brandSubCategory logo coverImage sellerName companyLocation brandSince brandSpeciality')
         .lean();
         
         if (!product) {
@@ -989,64 +994,34 @@ export const getSinglePublicProduct = async (req, res) => {
             });
         }
         
-        // Calculate final price after discount
-        let finalPrice = null;
-        let discountPercentage = null;
-        
-        if (product.discount && product.discount.value > 0 && product.variants && product.variants.length > 0) {
-            const basePrice = product.variants[0].basePrice;
-            if (product.discount.type === 'percentage') {
-                finalPrice = basePrice - (basePrice * product.discount.value / 100);
-                discountPercentage = product.discount.value;
-            } else if (product.discount.type === 'fixed') {
-                finalPrice = basePrice - product.discount.value;
-                discountPercentage = (product.discount.value / basePrice) * 100;
-            }
-        }
-        
-        // Get related products (same category)
         const relatedProducts = await ProductModel.find({
             category: product.category,
             _id: { $ne: productId },
-            status: 'active',
-            isAvailable: true
+            status: 'active'
         })
-        .select('title thumbnail variants.basePrice mrp discount totalSold createdAt')
+        .select('title thumbnail variants discount totalSold createdAt')
         .limit(8)
         .sort({ totalSold: -1 })
         .lean();
         
-        // Get seller's other products
         const sellerOtherProducts = await ProductModel.find({
             sellerPanel: product.sellerPanel,
             _id: { $ne: productId },
-            status: 'active',
-            isAvailable: true
+            status: 'active'
         })
-        .select('title thumbnail variants.basePrice mrp discount totalSold')
+        .select('title thumbnail variants discount totalSold')
         .limit(6)
         .sort({ createdAt: -1 })
         .lean();
         
-        // Increment view count (async - don't wait for response)
+        // Increment view count
         ProductModel.findByIdAndUpdate(productId, { $inc: { viewCount: 1 } }).exec();
-        
-        // Calculate average rating (if reviews exist)
-        const averageRating = product.reviews?.length > 0 
-            ? (product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length).toFixed(1)
-            : 0;
         
         return res.status(200).json({
             success: true,
             message: "Product fetched successfully",
             data: {
-                product: {
-                    ...product,
-                    finalPrice,
-                    discountPercentage,
-                    averageRating,
-                    totalReviews: product.reviews?.length || 0
-                },
+                product,
                 relatedProducts: {
                     count: relatedProducts.length,
                     list: relatedProducts
@@ -1059,10 +1034,10 @@ export const getSinglePublicProduct = async (req, res) => {
         });
         
     } catch (error) {
+        console.error('Error in getSinglePublicProduct:', error);
         return res.status(500).json({
             success: false,
             message: error.message
         });
     }
 };
-

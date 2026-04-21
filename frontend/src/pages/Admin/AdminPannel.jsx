@@ -38,7 +38,8 @@ import {
   AlertCircle,
   Flame,
   ShieldBanIcon,
-  Trash
+  Trash,
+  IndianRupee
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -98,9 +99,9 @@ const AdminPanel = () => {
     { name: 'Products', path: '/admin/products', icon: Package, section: 'products',
       subItems: [
         { name: 'All Products', path: '/admin/products/all', icon: Grid3x3 },
-        { name: 'Categories', path: '/admin/products/categories', icon: Tag },
-        { name: 'Reported Items', path: '/admin/products/reported', icon: AlertCircle },
-        { name: 'Inventory', path: '/admin/products/inventory', icon: Package }
+        { name: 'Price Updation', path: '/admin/products/price-update', icon: IndianRupee },
+        { name: 'Reported Items', path: '/admin/products/report', icon: AlertCircle },
+        
       ]
     },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, section: 'orders', badge: '342',

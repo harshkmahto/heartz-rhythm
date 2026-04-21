@@ -68,3 +68,68 @@ export const deleteProduct = async (productId) => {
         throw error.response?.data || { message: 'Product deletion failed' };
     }
 };
+
+
+//-----------------ADMIN----------------
+
+//GET ALL PRODUCTS
+export const getAllProducts = async (params) => {
+    try {
+        const queryString = params ? `?${params.toString()}` : '';
+        const url = `/product/admin/products${queryString}`;
+        const response = await api.get(url);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch products' };
+    
+        
+    }
+}
+
+//GET SINGLE PRODUCT
+export const getSingleProduct = async (productId) => {
+    try {
+        const response = await api.get(`/product/admin/products/${productId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch product' };
+    
+    }
+}
+
+// GET PRODUCTS STATICS
+export const getProductStatistics = async (days) => {
+    try {
+        const response = await api.get(`/product/admin/products/statistics?days=${days}`);
+        return response.data;
+    } catch(error){
+        throw error.response?.data || { message: 'Failed to fetch product statistics' };
+    
+    }
+}
+
+
+//-----------------PUBLIC------------------------
+
+//GET ALL PRODUCTS
+export const getAllPublicProducts = async(params)=> {
+    try {
+        const queryString = params ? `?${params.toString()}` : '';
+        const url = `/product/public/products${queryString}`;
+        const response = await api.get(url);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch products' };
+    }
+        
+}
+
+// GET SINGLE PRODUCT
+export const getSinglePublicProduct = async (productId) => {
+    try {
+        const response = await api.get(`/product/public/products/${productId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch product' };
+    }
+    }

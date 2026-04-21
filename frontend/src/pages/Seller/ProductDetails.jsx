@@ -285,7 +285,7 @@ const ProductDetails = () => {
               <FileText size={18} />
               Description
             </h3>
-            <p className="text-green-700 dark:text-green-300 leading-relaxed whitespace-pre-line">
+            <p className="text-green-700 dark:text-white leading-relaxed whitespace-pre-line">
               {product.description}
             </p>
           </div>
