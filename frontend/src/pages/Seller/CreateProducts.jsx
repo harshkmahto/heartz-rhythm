@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Package, Image, Settings, SearchCode, Eye, Send, Plus, X, Upload, Check,
   ChevronRight, Trash2, Calendar as CalendarIcon, Star, Video, Image as ImageIcon,
-  AlertCircle, RefreshCw, Clock
+  AlertCircle, RefreshCw,
+  Zap,
+  Store
 } from 'lucide-react';
 import { createProduct } from "../../utils/product.apiRequest";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { useSeller } from '../../context/SellerContext';
+import { Link } from 'react-router-dom';
+import {  ALLOWED_CATEGORIES, } from '../../Helper/Categories';
 
 const CreateProducts = () => {
   const [activeTab, setActiveTab] = useState('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
+  const [selectedDateTime, setSelectedDateTime] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   
@@ -50,6 +56,15 @@ const CreateProducts = () => {
   });
   const [showCaseImagePreview, setShowCaseImagePreview] = useState(null);
 
+  const { seller } = useSeller();
+
+  // Set brand from seller panel when component mounts
+  useEffect(() => {
+    if (seller && seller.brandName) {
+      setFormData(prev => ({ ...prev, brand: seller.brandName }));
+    }
+  }, [seller]);
+
   const tabs = [
     { id: 'basic', label: 'Basic Details', icon: Package },
     { id: 'media', label: 'Media', icon: Image },
@@ -63,21 +78,14 @@ const CreateProducts = () => {
     
     if (!formData.title.trim()) newErrors.title = 'Title is required';
     if (!formData.category.trim()) newErrors.category = 'Category is required';
-    if (!formData.brand.trim()) newErrors.brand = 'Brand is required';
+    // Brand validation removed since it's auto-filled from seller
     if (formData.variants.length === 0) newErrors.variants = 'At least one variant is required';
     if (!formData.thumbnail) newErrors.thumbnail = 'Thumbnail is required';
     
-    if (formData.status === 'scheduled') {
-      if (!scheduledDate) newErrors.scheduledDate = 'Schedule date is required';
-      if (!scheduledTime) newErrors.scheduledTime = 'Schedule time is required';
-      
-      if (scheduledDate && scheduledTime) {
-        const selectedDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
-        const now = new Date();
-        if (selectedDateTime <= now) {
-          newErrors.scheduledDateTime = 'Schedule date and time must be in the future';
-        }
-      }
+    if (formData.status === 'scheduled' && !selectedDateTime) {
+      newErrors.scheduledDateTime = 'Please select a future date and time';
+    } else if (formData.status === 'scheduled' && selectedDateTime && selectedDateTime <= new Date()) {
+      newErrors.scheduledDateTime = 'Schedule date and time must be in the future';
     }
     
     setErrors(newErrors);
@@ -208,49 +216,9 @@ const CreateProducts = () => {
     setFormData(prev => ({ ...prev, [type]: prev[type].filter((_, i) => i !== index) }));
   };
 
-  const getMinDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
-
-  const getMinTimeForDate = () => {
-    if (!scheduledDate) return '00:00';
-    const selectedDate = new Date(scheduledDate);
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    if (selectedDate.toISOString().split('T')[0] === todayStr) {
-      const currentHour = today.getHours();
-      const currentMinute = today.getMinutes();
-      return `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
-    }
-    return '00:00';
-  };
-
-  const handleScheduledDateChange = (e) => {
-    const date = e.target.value;
-    setScheduledDate(date);
-    setScheduledTime('');
-    if (errors.scheduledDate) setErrors(prev => ({ ...prev, scheduledDate: '' }));
-    if (errors.scheduledDateTime) setErrors(prev => ({ ...prev, scheduledDateTime: '' }));
-  };
-
-  const handleScheduledTimeChange = (e) => {
-    const time = e.target.value;
-    const selectedDateTime = new Date(`${scheduledDate}T${time}`);
-    const now = new Date();
-    
-    if (selectedDateTime <= now) {
-      setErrors(prev => ({ ...prev, scheduledDateTime: 'Please select a future time' }));
-    } else {
-      setErrors(prev => ({ ...prev, scheduledDateTime: '' }));
-    }
-    setScheduledTime(time);
-    if (errors.scheduledTime) setErrors(prev => ({ ...prev, scheduledTime: '' }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted:', formData);
     setSubmitError('');
     
     if (!validateForm()) {
@@ -259,7 +227,7 @@ const CreateProducts = () => {
       if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    
+
     setIsSubmitting(true);
     
     const submitData = new FormData();
@@ -285,9 +253,8 @@ const CreateProducts = () => {
       if (item.image) submitData.append(`showCase_${idx}`, item.image);
     });
     
-    if (formData.status === 'scheduled' && scheduledDate && scheduledTime) {
-      const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
-      submitData.append('scheduledAt', scheduledDateTime.toISOString());
+    if (formData.status === 'scheduled' && selectedDateTime) {
+      submitData.append('scheduledAt', selectedDateTime.toISOString());
     }
     
     try {
@@ -304,16 +271,110 @@ const CreateProducts = () => {
     }
   };
 
+  if (!seller) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-100 via-white to-green-100 dark:from-green-950 dark:via-black dark:to-emerald-800 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/95 dark:bg-black/95 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden border border-emerald-200/50 dark:border-emerald-800/30">
+          <div className="h-2 bg-gradient-to-r from-emerald-400 to-green-500"></div>
+          
+          <div className="p-8 text-center">
+            <div className="w-24 h-24 mx-auto mb-6 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center">
+              <Store className="w-12 h-12 text-emerald-500" />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+              No Seller Panel Found
+            </h2>
+            
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              You haven't created a seller panel yet. Create one to start selling your products and manage your brand.
+            </p>
+            
+            <div className="space-y-3">
+              <Link to='/seller/create/seller-pannel'>
+                <button className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-medium py-3 px-4 mb-2 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+                  Create Profile
+                </button>
+              </Link>
+              
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full bg-white/50 dark:bg-black/50 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Zap className="w-5 h-5" />
+                Refresh Page
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const ToggleSwitch = ({ enabled, onChange }) => (
     <button
       type="button"
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
         enabled ? 'bg-green-600' : 'bg-gray-600'
       }`}
     >
       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
+  );
+
+  // Status Section with DatePicker only
+  const renderStatusSection = () => (
+    <div className="p-4 border border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-black/20">
+      <label className="block text-lg font-semibold text-green-900 dark:text-green-100 mb-4">Product Status</label>
+      <div className="flex flex-wrap gap-6">
+        {['draft', 'active', 'scheduled'].map((status) => (
+          <label key={status} className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="status"
+              value={status}
+              checked={formData.status === status}
+              onChange={handleInputChange}
+              className="text-green-600 w-4 h-4"
+            />
+            <span className="text-green-800 dark:text-green-300 capitalize">{status}</span>
+          </label>
+        ))}
+      </div>
+      
+      {formData.status === 'scheduled' && (
+        <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
+          <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
+            Schedule Date & Time <span className="text-red-500">*</span>
+          </label>
+          <DatePicker
+            selected={selectedDateTime}
+            onChange={(date) => {
+              setSelectedDateTime(date);
+              if (errors.scheduledDateTime) setErrors(prev => ({ ...prev, scheduledDateTime: '' }));
+            }}
+            showTimeSelect
+            timeFormat="HH:mm"
+            timeIntervals={15}
+            timeCaption="Time"
+            dateFormat="MMMM d, yyyy h:mm aa"
+            minDate={new Date()}
+            placeholderText="Click to select date and time"
+            className="w-full px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40 text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500 cursor-pointer"
+            calendarClassName="dark:bg-gray-800 dark:text-white"
+          />
+          <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+            Click to open calendar - you can select year/month from dropdowns. Only future dates/times allowed.
+          </p>
+          {errors.scheduledDateTime && (
+            <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
+              <AlertCircle size={14} /> {errors.scheduledDateTime}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 
   const renderBasicDetails = () => (
@@ -330,7 +391,7 @@ const CreateProducts = () => {
             onChange={handleInputChange}
             className={`w-full px-4 py-2.5 rounded-xl border ${
               errors.title ? 'border-red-500' : 'border-green-200 dark:border-green-700'
-            } bg-white dark:bg-black/40 text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500`}
+            } bg-white dark:bg-black/40`}
             placeholder="Enter product title"
           />
           {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
@@ -342,7 +403,7 @@ const CreateProducts = () => {
             name="subtitle"
             value={formData.subtitle}
             onChange={handleInputChange}
-            className="w-full px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40 text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500"
+            className="w-full px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
             placeholder="Enter product subtitle"
           />
         </div>
@@ -355,7 +416,7 @@ const CreateProducts = () => {
           value={formData.description}
           onChange={handleInputChange}
           rows="4"
-          className="w-full px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40 text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500"
+          className="w-full px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
           placeholder="Enter detailed product description"
         />
       </div>
@@ -371,63 +432,85 @@ const CreateProducts = () => {
             className="flex-1 px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
             placeholder="Enter a feature"
           />
-          <button type="button" onClick={addFeature} className="px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl flex items-center gap-2">
+          <button type="button" onClick={addFeature} className="px-4 py-2.5 bg-green-600 text-white rounded-xl flex items-center gap-2">
             <Plus size={18} /> Add Feature
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
           {formData.features.map((feature, idx) => (
-            <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 rounded-full text-sm">
+            <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-800 rounded-full text-sm">
               <Check size={14} /> {feature}
-              <button type="button" onClick={() => removeFeature(idx)} className="hover:text-red-500"><X size={14} /></button>
+              <button type="button" onClick={() => removeFeature(idx)}><X size={14} /></button>
             </span>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
-            Category <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-2.5 rounded-xl border ${
-              errors.category ? 'border-red-500' : 'border-green-200 dark:border-green-700'
-            } bg-white dark:bg-black/40`}
-            placeholder="e.g., Electronics"
-          />
-          {errors.category && <p className="mt-1 text-sm text-red-500">{errors.category}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">Sub Category</label>
-          <input
-            type="text"
-            name="subCategory"
-            value={formData.subCategory}
-            onChange={handleInputChange}
-            className="w-full px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
-            placeholder="e.g., Smartphones"
-          />
-        </div>
+    
+      {/* Category - Fixed Dropdown */}
+      <div>
+        <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
+          Category <span className="text-red-500">*</span>
+        </label>
+        <select
+          name="category"
+          value={formData.category}
+          onChange={handleInputChange}
+          className={`w-full px-4 py-2.5 rounded-xl border ${
+            errors.category ? 'border-red-500' : 'border-green-200 dark:border-green-700'
+          } bg-white dark:bg-black text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500 `}
+        >
+          <option value="">Select Category</option>
+          {ALLOWED_CATEGORIES.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        {errors.category && <p className="mt-1 text-sm text-red-500">{errors.category}</p>}
+      </div>
+
+      {/* Sub Category - Text Input (Sellers can enter their own) */}
+      <div>
+        <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
+          Sub Category
+        </label>
+        <input
+          type="text"
+          name="subCategory"
+          value={formData.subCategory}
+          onChange={handleInputChange}
+          className={`w-full px-4 py-2.5 rounded-xl border ${
+            errors.subCategory ? 'border-red-500' : 'border-green-200 dark:border-green-700'
+          } bg-white dark:bg-black/40 text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500`}
+          placeholder="e.g., Stratocaster, Dreadnought, Les Paul, etc."
+        />
+        <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+          Enter any subcategory (e.g., Stratocaster, Dreadnought, Custom Shop)
+        </p>
+        {errors.subCategory && <p className="mt-1 text-sm text-red-500">{errors.subCategory}</p>}
+      </div>
+
+        {/* Brand Field  */}
         <div>
           <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
             Brand <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            name="brand"
-            value={formData.brand}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-2.5 rounded-xl border ${
-              errors.brand ? 'border-red-500' : 'border-green-200 dark:border-green-700'
-            } bg-white dark:bg-black/40`}
-            placeholder="e.g., Apple"
-          />
-          {errors.brand && <p className="mt-1 text-sm text-red-500">{errors.brand}</p>}
+          <div className="relative">
+            <input
+              type="text"
+              name="brand"
+              value={formData.brand}
+              disabled
+              className="w-full px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 cursor-not-allowed"
+              placeholder="Brand will be auto-filled from your seller profile"
+            />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Check size={18} className="text-green-500" />
+            </div>
+          </div>
+          <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+            This is your registered brand name from your seller profile
+          </p>
         </div>
       </div>
 
@@ -449,12 +532,12 @@ const CreateProducts = () => {
             onChange={(e) => setAboutInput(prev => ({ ...prev, value: e.target.value }))}
             className="flex-1 px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
           />
-          <button type="button" onClick={addAbout} className="px-4 py-2.5 bg-green-600 text-white rounded-xl"><Plus size={18} /> Add</button>
+          <button type="button" onClick={addAbout} className="px-4 py-2.5 bg-green-600 text-white rounded-xl"><Plus size={18} /></button>
         </div>
         <div className="space-y-2">
           {formData.about.map((item, idx) => (
             <div key={idx} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-              <div><span className="font-medium text-green-800 dark:text-green-300">{item.key}:</span><span className="ml-2 text-green-700 dark:text-green-400">{item.value}</span></div>
+              <div><span className="font-medium">{item.key}:</span><span className="ml-2">{item.value}</span></div>
               <button type="button" onClick={() => removeAbout(idx)} className="text-red-500"><X size={18} /></button>
             </div>
           ))}
@@ -468,10 +551,9 @@ const CreateProducts = () => {
         </label>
         {errors.variants && <p className="mb-3 text-sm text-red-500">{errors.variants}</p>}
         
-        {/* Variant Input Fields with Labels */}
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Color Name</label>
+            <label className="block text-xs text-green-600 mb-1">Color Name</label>
             <input
               type="text"
               placeholder="e.g., Midnight Blue"
@@ -481,26 +563,17 @@ const CreateProducts = () => {
             />
           </div>
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Color Code</label>
+            <label className="block text-xs text-green-600 mb-1">Color Code</label>
             <input
               type="color"
               value={variantInput.colorCode}
               onChange={(e) => setVariantInput(prev => ({ ...prev, colorCode: e.target.value }))}
-              className="w-full h-10 rounded-xl border border-green-200 cursor-pointer"
+              className="w-full h-10 rounded-full border border-green-200 cursor-pointer"
             />
           </div>
+          
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Base Price (₹)</label>
-            <input
-              type="number"
-              placeholder="Base Price"
-              value={variantInput.basePrice}
-              onChange={(e) => setVariantInput(prev => ({ ...prev, basePrice: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">MRP (₹)</label>
+            <label className="block text-xs text-green-600 mb-1">MRP (₹)</label>
             <input
               type="number"
               placeholder="MRP"
@@ -509,8 +582,20 @@ const CreateProducts = () => {
               className="w-full px-3 py-2 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
             />
           </div>
+
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Stock Quantity</label>
+            <label className="block text-xs text-green-600 mb-1">Base Price (₹)</label>
+            <input
+              type="number"
+              placeholder="Base Price"
+              value={variantInput.basePrice}
+              onChange={(e) => setVariantInput(prev => ({ ...prev, basePrice: e.target.value }))}
+              className="w-full px-3 py-2 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-green-600 mb-1">Stock Quantity</label>
             <input
               type="number"
               placeholder="Stock"
@@ -520,15 +605,15 @@ const CreateProducts = () => {
             />
           </div>
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Availability</label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
-              <span className="text-sm text-green-700 dark:text-green-300">Available</span>
+            <label className="block text-xs text-green-600 mb-1">Availability</label>
+            <div className="flex flex-col items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
+              <span className="text-sm">Available</span>
               <ToggleSwitch enabled={variantInput.isAvailable} onChange={(val) => setVariantInput(prev => ({ ...prev, isAvailable: val }))} />
             </div>
           </div>
         </div>
         
-        <button type="button" onClick={addVariant} className="mb-4 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl flex items-center gap-2">
+        <button type="button" onClick={addVariant} className="mb-4 px-4 py-2.5 bg-green-600 text-white rounded-xl flex items-center gap-2">
           <Plus size={18} /> Add Color Variant
         </button>
         
@@ -537,16 +622,16 @@ const CreateProducts = () => {
             <div key={idx} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="w-6 h-6 rounded-full border-2 border-green-300" style={{ backgroundColor: variant.colorCode }}></div>
-                <span className="font-medium text-green-800 dark:text-green-200">{variant.name}</span>
-                <span className="text-green-700 dark:text-green-400">Base: ₹{variant.basePrice}</span>
-                <span className="text-green-700 dark:text-green-400 line-through">MRP: ₹{variant.mrp}</span>
-                <span className="text-green-700 dark:text-green-400">Stock: {variant.stock}</span>
+                <span className="font-medium">{variant.name}</span>
+                <span>Base: ₹{variant.basePrice}</span>
+                <span className="line-through">MRP: ₹{variant.mrp}</span>
+                <span>Stock: {variant.stock}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-green-700 dark:text-green-400">Available</span>
+                  <span className="text-sm">Available</span>
                   <ToggleSwitch enabled={variant.isAvailable} onChange={(val) => updateVariantAvailability(idx, val)} />
                 </div>
               </div>
-              <button type="button" onClick={() => removeVariant(idx)} className="text-red-500 hover:text-red-600"><Trash2 size={18} /></button>
+              <button type="button" onClick={() => removeVariant(idx)} className="text-red-500"><Trash2 size={18} /></button>
             </div>
           ))}
         </div>
@@ -560,19 +645,17 @@ const CreateProducts = () => {
         <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
           Thumbnail Image <span className="text-red-500">*</span>
         </label>
-        <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
-          errors.thumbnail ? 'border-red-500' : 'border-green-300 dark:border-green-600 hover:border-green-500'
-        } bg-white dark:bg-black/20`}>
+        <div className={`border-2 border-dashed rounded-xl p-6 text-center ${errors.thumbnail ? 'border-red-500' : 'border-green-300 dark:border-green-600'} bg-white dark:bg-black/20`}>
           {formData.thumbnail ? (
             <div className="relative inline-block">
-              <img src={URL.createObjectURL(formData.thumbnail)} alt="Thumbnail" className="w-32 h-32 object-cover rounded-xl shadow-lg" />
+              <img src={URL.createObjectURL(formData.thumbnail)} alt="Thumbnail" className="w-32 h-32 object-cover rounded-xl" />
               <button type="button" onClick={() => setFormData(prev => ({ ...prev, thumbnail: null }))}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"><X size={14} /></button>
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
             </div>
           ) : (
             <label className="cursor-pointer flex flex-col items-center gap-2">
               <Upload size={40} className="text-green-500" />
-              <span className="text-green-700 dark:text-green-300">Click to upload thumbnail</span>
+              <span>Click to upload thumbnail</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'thumbnail')} />
             </label>
           )}
@@ -581,18 +664,18 @@ const CreateProducts = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">Product Images (Multiple)</label>
+        <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">Product Images</label>
         <div className="border-2 border-dashed border-green-300 dark:border-green-600 rounded-xl p-6 bg-white dark:bg-black/20">
           <div className="flex flex-wrap gap-4 mb-4">
             {formData.images.map((img, idx) => (
               <div key={idx} className="relative">
-                <img src={URL.createObjectURL(img)} alt={`Product ${idx}`} className="w-24 h-24 object-cover rounded-xl shadow" />
+                <img src={URL.createObjectURL(img)} alt="Product" className="w-24 h-24 object-cover rounded-xl" />
                 <button type="button" onClick={() => removeMedia('images', idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
               </div>
             ))}
           </div>
-          <label className="cursor-pointer flex items-center justify-center gap-2 text-green-600 hover:text-green-700">
-            <Plus size={20} /> <span>Add Product Images</span>
+          <label className="cursor-pointer flex items-center justify-center gap-2 text-green-600">
+            <Plus size={20} /> <span>Add images</span>
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFileChange(e, 'images')} />
           </label>
         </div>
@@ -604,13 +687,13 @@ const CreateProducts = () => {
           <div className="flex flex-wrap gap-4 mb-4">
             {formData.gallery.map((img, idx) => (
               <div key={idx} className="relative">
-                <img src={URL.createObjectURL(img)} alt={`Gallery ${idx}`} className="w-24 h-24 object-cover rounded-xl shadow" />
+                <img src={URL.createObjectURL(img)} alt="Gallery" className="w-24 h-24 object-cover rounded-xl" />
                 <button type="button" onClick={() => removeMedia('gallery', idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
               </div>
             ))}
           </div>
-          <label className="cursor-pointer flex items-center justify-center gap-2 text-green-600 hover:text-green-700">
-            <Plus size={20} /> <span>Add Gallery Images</span>
+          <label className="cursor-pointer flex items-center justify-center gap-2 text-green-600">
+            <Plus size={20} /> <span>Add to gallery</span>
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFileChange(e, 'gallery')} />
           </label>
         </div>
@@ -621,14 +704,14 @@ const CreateProducts = () => {
         <div className="border-2 border-dashed border-green-300 dark:border-green-600 rounded-xl p-6 text-center bg-white dark:bg-black/20">
           {formData.preview ? (
             <div className="relative inline-block">
-              <video src={URL.createObjectURL(formData.preview)} className="w-40 h-40 object-cover rounded-xl shadow" controls />
+              <video src={URL.createObjectURL(formData.preview)} className="w-40 h-40 object-cover rounded-xl" controls />
               <button type="button" onClick={() => setFormData(prev => ({ ...prev, preview: null }))}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
             </div>
           ) : (
             <label className="cursor-pointer flex flex-col items-center gap-2">
               <Upload size={40} className="text-green-500" />
-              <span className="text-green-700 dark:text-green-300">Upload preview video</span>
+              <span>Upload preview video</span>
               <input type="file" accept="video/*" className="hidden" onChange={(e) => handleFileChange(e, 'preview')} />
             </label>
           )}
@@ -641,13 +724,13 @@ const CreateProducts = () => {
           <div className="flex flex-wrap gap-4 mb-4">
             {formData.videos.map((video, idx) => (
               <div key={idx} className="relative">
-                <video src={URL.createObjectURL(video)} className="w-32 h-32 object-cover rounded-xl shadow" />
+                <video src={URL.createObjectURL(video)} className="w-32 h-32 object-cover rounded-xl" />
                 <button type="button" onClick={() => removeMedia('videos', idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
               </div>
             ))}
           </div>
-          <label className="cursor-pointer flex items-center justify-center gap-2 text-green-600 hover:text-green-700">
-            <Plus size={20} /> <span>Add More Videos</span>
+          <label className="cursor-pointer flex items-center justify-center gap-2 text-green-600">
+            <Plus size={20} /> <span>Add videos</span>
             <input type="file" accept="video/*" multiple className="hidden" onChange={(e) => handleFileChange(e, 'videos')} />
           </label>
         </div>
@@ -657,37 +740,37 @@ const CreateProducts = () => {
         <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">Showcase Items</label>
         <div className="space-y-4 p-4 border border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-black/20">
           <div className="flex gap-3 flex-wrap">
-            <label className="cursor-pointer flex flex-col items-center gap-1 p-2 border border-green-200 dark:border-green-700 rounded-lg">
+            <label className="cursor-pointer flex flex-col items-center gap-1 p-2 border rounded-lg">
               {showCaseImagePreview ? (
                 <img src={showCaseImagePreview} alt="Preview" className="w-16 h-16 object-cover rounded" />
               ) : (
                 <ImageIcon size={32} className="text-green-500" />
               )}
-              <span className="text-xs text-green-600">Upload Image</span>
+              <span className="text-xs">Upload</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleShowCaseImageChange} />
             </label>
             <input
               type="text"
-              placeholder="Key (e.g., Warranty)"
+              placeholder="Key"
               value={showCaseInput.key}
               onChange={(e) => setShowCaseInput(prev => ({ ...prev, key: e.target.value }))}
               className="flex-1 px-4 py-2 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
             />
             <input
               type="text"
-              placeholder="Value (e.g., 2 Years)"
+              placeholder="Value"
               value={showCaseInput.value}
               onChange={(e) => setShowCaseInput(prev => ({ ...prev, value: e.target.value }))}
               className="flex-1 px-4 py-2 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
             />
-            <button type="button" onClick={addShowCase} className="px-4 py-2 bg-green-600 text-white rounded-xl"><Plus size={18} /> Add</button>
+            <button type="button" onClick={addShowCase} className="px-4 py-2 bg-green-600 text-white rounded-xl"><Plus size={18} /></button>
           </div>
           <div className="space-y-2">
             {formData.showCase.map((item, idx) => (
               <div key={idx} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
                 {item.imagePreview && <img src={item.imagePreview} alt="Showcase" className="w-12 h-12 object-cover rounded-lg" />}
-                <span className="font-medium text-green-800 dark:text-green-300">{item.key}:</span>
-                <span className="text-green-700 dark:text-green-400">{item.value}</span>
+                <span className="font-medium">{item.key}:</span>
+                <span>{item.value}</span>
                 <button type="button" onClick={() => removeShowCase(idx)} className="ml-auto text-red-500"><Trash2 size={18} /></button>
               </div>
             ))}
@@ -699,12 +782,11 @@ const CreateProducts = () => {
 
   const renderDetails = () => (
     <div className="space-y-8">
-      {/* Discount */}
       <div className="p-4 border border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-black/20">
-        <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2"><Star size={20} /> Discount Settings</h3>
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Star size={20} /> Discount Settings</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Discount Type</label>
+            <label className="block text-xs text-green-600 mb-1">Discount Type</label>
             <select
               value={formData.discount.type}
               onChange={(e) => handleNestedChange('discount', 'type', e.target.value)}
@@ -715,7 +797,7 @@ const CreateProducts = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Discount Value</label>
+            <label className="block text-xs text-green-600 mb-1">Discount Value</label>
             <input
               type="number"
               placeholder="Enter discount value"
@@ -725,7 +807,7 @@ const CreateProducts = () => {
             />
           </div>
           <div>
-            <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Discount Code (Optional)</label>
+            <label className="block text-xs text-green-600 mb-1">Discount Code</label>
             <input
               type="text"
               placeholder="e.g., SAVE10"
@@ -737,16 +819,15 @@ const CreateProducts = () => {
         </div>
       </div>
 
-      {/* Replacement */}
       <div className="p-4 border border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-black/20">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 flex items-center gap-2"><Package size={20} /> Replacement Policy</h3>
+          <h3 className="text-lg font-semibold flex items-center gap-2"><Package size={20} /> Replacement Policy</h3>
           <ToggleSwitch enabled={formData.replacement.isAvailable} onChange={(val) => handleNestedChange('replacement', 'isAvailable', val)} />
         </div>
         {formData.replacement.isAvailable && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Replacement Duration (Days)</label>
+              <label className="block text-xs text-green-600 mb-1">Duration (Days)</label>
               <input
                 type="number"
                 placeholder="e.g., 7"
@@ -756,7 +837,7 @@ const CreateProducts = () => {
               />
             </div>
             <div>
-              <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Replacement Policy Details</label>
+              <label className="block text-xs text-green-600 mb-1">Policy Details</label>
               <textarea
                 placeholder="Describe replacement policy..."
                 value={formData.replacement.policy}
@@ -769,16 +850,15 @@ const CreateProducts = () => {
         )}
       </div>
 
-      {/* Return */}
       <div className="p-4 border border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-black/20">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 flex items-center gap-2"><RefreshCw size={20} /> Return Policy</h3>
+          <h3 className="text-lg font-semibold flex items-center gap-2"><RefreshCw size={20} /> Return Policy</h3>
           <ToggleSwitch enabled={formData.return.isAvailable} onChange={(val) => handleNestedChange('return', 'isAvailable', val)} />
         </div>
         {formData.return.isAvailable && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Return Duration (Days)</label>
+              <label className="block text-xs text-green-600 mb-1">Duration (Days)</label>
               <input
                 type="number"
                 placeholder="e.g., 30"
@@ -788,7 +868,7 @@ const CreateProducts = () => {
               />
             </div>
             <div>
-              <label className="block text-xs text-green-600 dark:text-green-400 mb-1">Return Policy Details</label>
+              <label className="block text-xs text-green-600 mb-1">Policy Details</label>
               <textarea
                 placeholder="Describe return policy..."
                 value={formData.return.policy}
@@ -801,93 +881,25 @@ const CreateProducts = () => {
         )}
       </div>
 
-      {/* Featured & Coming Soon Toggles */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-black/20">
         <div className="flex items-center justify-between">
-          <span className="text-green-800 dark:text-green-300 font-medium flex items-center gap-2"><Star size={18} /> Featured Product</span>
+          <span className="font-medium">Featured Product</span>
           <ToggleSwitch enabled={formData.isFeatured} onChange={(val) => setFormData(prev => ({ ...prev, isFeatured: val }))} />
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-green-800 dark:text-green-300 font-medium flex items-center gap-2"><CalendarIcon size={18} /> Coming Soon</span>
+          <span className="font-medium">Coming Soon</span>
           <ToggleSwitch enabled={formData.isComingSoon} onChange={(val) => setFormData(prev => ({ ...prev, isComingSoon: val }))} />
         </div>
       </div>
 
-      {/* Status with Date/Time Picker */}
-      <div className="p-4 border border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-black/20">
-        <label className="block text-lg font-semibold text-green-900 dark:text-green-100 mb-4">Product Status</label>
-        <div className="flex flex-wrap gap-6">
-          {['draft', 'active', 'scheduled'].map((status) => (
-            <label key={status} className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="status"
-                value={status}
-                checked={formData.status === status}
-                onChange={handleInputChange}
-                className="text-green-600 focus:ring-green-500 w-4 h-4"
-              />
-              <span className="text-green-800 dark:text-green-300 capitalize">{status}</span>
-            </label>
-          ))}
-        </div>
-        
-        {formData.status === 'scheduled' && (
-          <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
-                  Schedule Date <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500" size={18} />
-                  <input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={handleScheduledDateChange}
-                    min={getMinDate()}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border ${
-                      errors.scheduledDate || errors.scheduledDateTime ? 'border-red-500' : 'border-green-200 dark:border-green-700'
-                    } bg-white dark:bg-black/40 text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500 cursor-pointer`}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-green-600 dark:text-green-400">Select a future date (click on year/month to navigate)</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">
-                  Schedule Time <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500" size={18} />
-                  <input
-                    type="time"
-                    value={scheduledTime}
-                    onChange={handleScheduledTimeChange}
-                    min={scheduledDate === getMinDate() ? getMinTimeForDate() : '00:00'}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border ${
-                      errors.scheduledTime || errors.scheduledDateTime ? 'border-red-500' : 'border-green-200 dark:border-green-700'
-                    } bg-white dark:bg-black/40 text-green-900 dark:text-green-100 focus:ring-2 focus:ring-green-500 cursor-pointer`}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-green-600 dark:text-green-400">Select a future time</p>
-              </div>
-            </div>
-            {(errors.scheduledDate || errors.scheduledTime || errors.scheduledDateTime) && (
-              <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle size={14} /> 
-                {errors.scheduledDateTime || errors.scheduledDate || errors.scheduledTime}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+      {renderStatusSection()}
     </div>
   );
 
   const renderSEO = () => (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">SEO Meta Title</label>
+        <label className="block text-sm font-medium mb-2">SEO Meta Title</label>
         <input
           type="text"
           value={formData.seo.title}
@@ -897,7 +909,7 @@ const CreateProducts = () => {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">SEO Meta Description</label>
+        <label className="block text-sm font-medium mb-2">SEO Meta Description</label>
         <textarea
           value={formData.seo.description}
           onChange={(e) => handleNestedChange('seo', 'description', e.target.value)}
@@ -907,7 +919,7 @@ const CreateProducts = () => {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-green-800 dark:text-green-300 mb-2">SEO Keywords</label>
+        <label className="block text-sm font-medium mb-2">SEO Keywords</label>
         <div className="flex gap-2 mb-3">
           <input
             type="text"
@@ -915,15 +927,15 @@ const CreateProducts = () => {
             onChange={(e) => setKeywordInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addKeyword()}
             className="flex-1 px-4 py-2.5 rounded-xl border border-green-200 dark:border-green-700 bg-white dark:bg-black/40"
-            placeholder="Enter keyword and press Enter"
+            placeholder="Enter keyword"
           />
-          <button type="button" onClick={addKeyword} className="px-4 py-2.5 bg-green-600 text-white rounded-xl"><Plus size={18} /> Add</button>
+          <button type="button" onClick={addKeyword} className="px-4 py-2.5 bg-green-600 text-white rounded-xl"><Plus size={18} /></button>
         </div>
         <div className="flex flex-wrap gap-2">
           {formData.seo.keywords.map((keyword, idx) => (
-            <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 rounded-full text-sm">
+            <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 rounded-full text-sm">
               {keyword}
-              <button type="button" onClick={() => removeKeyword(idx)} className="hover:text-red-500"><X size={14} /></button>
+              <button type="button" onClick={() => removeKeyword(idx)}><X size={14} /></button>
             </span>
           ))}
         </div>
@@ -934,66 +946,26 @@ const CreateProducts = () => {
   const renderPreview = () => (
     <div className="space-y-6">
       <div className="bg-gradient-to-br from-green-50 to-white dark:from-green-900/30 dark:to-black/40 rounded-2xl p-6 border border-green-200 dark:border-green-800">
-        <h3 className="text-xl font-bold text-green-900 dark:text-green-100 mb-4">Product Preview</h3>
-        
+        <h3 className="text-xl font-bold mb-4">Product Preview</h3>
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-1/3">
             {formData.thumbnail ? (
-              <img src={URL.createObjectURL(formData.thumbnail)} alt="Preview" className="w-full rounded-xl shadow-lg" />
+              <img src={URL.createObjectURL(formData.thumbnail)} alt="Preview" className="w-full rounded-xl" />
             ) : (
-              <div className="w-full h-48 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-400">No thumbnail</div>
+              <div className="w-full h-48 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">No thumbnail</div>
             )}
           </div>
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-green-900 dark:text-green-100">{formData.title || 'Product Title'}</h2>
-            <p className="text-green-600 dark:text-green-400 mt-1">{formData.subtitle || 'Product Subtitle'}</p>
+            <h2 className="text-2xl font-bold">{formData.title || 'Product Title'}</h2>
+            <p className="text-green-600 mt-1">{formData.subtitle || 'Product Subtitle'}</p>
             {formData.variants.length > 0 && (
               <div className="mt-4">
-                <span className="text-2xl font-bold text-green-700 dark:text-green-300">₹{formData.variants[0].basePrice}</span>
-                <span className="ml-2 text-sm text-green-500 line-through">₹{formData.variants[0].mrp}</span>
-                {formData.discount.value > 0 && (
-                  <span className="ml-2 px-2 py-1 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 text-sm rounded-full">
-                    {formData.discount.type === 'percentage' ? `${formData.discount.value}% OFF` : `₹${formData.discount.value} OFF`}
-                  </span>
-                )}
+                <span className="text-2xl font-bold text-green-700">₹{formData.variants[0].basePrice}</span>
+                <span className="ml-2 text-sm line-through">₹{formData.variants[0].mrp}</span>
               </div>
             )}
-            <div className="mt-4 flex gap-2 flex-wrap">
-              <span className="px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-sm">{formData.category || 'Category'}</span>
-              <span className="px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-sm">{formData.brand || 'Brand'}</span>
-            </div>
           </div>
         </div>
-        
-        {formData.description && (
-          <div className="mt-6">
-            <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Description</h4>
-            <p className="text-green-700 dark:text-green-300">{formData.description}</p>
-          </div>
-        )}
-        
-        {formData.features.length > 0 && (
-          <div className="mt-6">
-            <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Features</h4>
-            <ul className="list-disc list-inside space-y-1">
-              {formData.features.map((feature, idx) => (<li key={idx} className="text-green-700 dark:text-green-300">{feature}</li>))}
-            </ul>
-          </div>
-        )}
-        
-        {formData.variants.length > 0 && (
-          <div className="mt-6">
-            <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Available Colors</h4>
-            <div className="flex gap-3">
-              {formData.variants.map((variant, idx) => (
-                <div key={idx} className="text-center">
-                  <div className="w-10 h-10 rounded-full border-2 border-green-300 shadow" style={{ backgroundColor: variant.colorCode }}></div>
-                  <span className="text-xs text-green-700 dark:text-green-300 mt-1 block">{variant.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -1009,9 +981,9 @@ const CreateProducts = () => {
         </div>
 
         {submitError && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-xl flex items-center gap-3">
             <AlertCircle className="text-red-500" size={20} />
-            <p className="text-red-700 dark:text-red-400">{submitError}</p>
+            <p className="text-red-700">{submitError}</p>
           </div>
         )}
 
@@ -1019,16 +991,10 @@ const CreateProducts = () => {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
+              <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg'
-                    : 'text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30'
-                }`}
-              >
+                  activeTab === tab.id ? 'bg-green-600 text-white shadow-lg' : 'text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-700 cursor-pointer'
+                }`}>
                 <Icon size={18} /> {tab.label} {activeTab === tab.id && <ChevronRight size={16} />}
               </button>
             );
@@ -1043,21 +1009,12 @@ const CreateProducts = () => {
           {activeTab === 'preview' && renderPreview()}
 
           <div className="mt-8 pt-6 border-t border-green-200 dark:border-green-800 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
-            >
+            <button type="submit" disabled={isSubmitting}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-xl font-semibold shadow-lg disabled:opacity-70 cursor-pointer">
               {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating...
-                </>
+                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Creating...</>
               ) : (
-                <>
-                  <Send size={18} />
-                  Create Product
-                </>
+                <><Send size={18} /> Create Product</>
               )}
             </button>
           </div>

@@ -41,6 +41,11 @@ import UnverifiedUser from "../pages/Admin/User/UnverifiedUser";
 import StatusWiseUser from "../pages/Admin/User/StatusWiseUser";
 import BinUsers from "../pages/Admin/User/BinUsers";
 import CreateProducts from "../pages/Seller/CreateProducts";
+import ProductDetails from "../pages/Seller/ProductDetails";
+import SellerUpdateProduct from "../pages/Seller/SellerUpdateProduct";
+import Inventory from "../pages/Seller/Inventory";
+import DraftInventory from "../pages/Seller/DraftInventory";
+import SellerAnalytics from "../pages/Seller/SellerAnalytics";
 
 
 
@@ -89,10 +94,15 @@ const router = createBrowserRouter([
             {index: true, element:<SellerDashboard/>},
             {path: 'products', element:<SellerProductManagement/>},
             {path: 'products/all', element:<SellerAllProduct/>},
+            {path: 'product/details/:productId', element:<ProductDetails/>},
             {path: 'create/seller-pannel', element:<CreateSellerPannel/>},
             {path: 'aboutme', element:<SellerBrandPannel/>},
             {path: 'seller-details', element:<SellerDetails/>},
-            {path: 'product/create', element:<CreateProducts/>}
+            {path: 'product/create', element:<CreateProducts/>},
+            {path: 'product/update/:productId', element:<SellerUpdateProduct/>},
+            {path: 'products/inventory', element:<Inventory/>},
+            {path: 'draft/inventory', element:<DraftInventory/>},
+            {path: 'analytics', element:<SellerAnalytics/>},
             
         ],
     },

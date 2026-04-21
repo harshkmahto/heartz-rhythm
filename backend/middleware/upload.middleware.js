@@ -41,11 +41,8 @@ export const uploadSellerImages = upload.fields([
     { name: 'previewImage', maxCount: 3 }
 ]);
 
-export const uploadProductImages = upload.fields([
-    { name: 'thumbnail', maxCount: 1 },
-    { name: 'images', maxCount: 5 },
-    { name: 'gallery', maxCount: 10 },
-    { name: 'preview', maxCount: 1 },
-    { name: 'videos', maxCount: 5 },
-    {name: 'image', maxCount: 1},
-]);
+export const uploadProductImages = multer({
+    storage: storage,
+    limits: { fileSize: 20 * 1024 * 1024 }, 
+    fileFilter: fileFilter
+}).any();

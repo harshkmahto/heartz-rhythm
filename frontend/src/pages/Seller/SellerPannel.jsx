@@ -30,7 +30,8 @@ import {
   ChevronDown,
   MessageCircle,
   Clock,
-  Plus
+  Plus,
+  PackageCheckIcon
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -80,9 +81,9 @@ const SellerPanel = () => {
     { name: 'Products', path: '/seller/products', icon: Package, section: 'products',
       subItems: [
         { name: 'All Products', path: '/seller/products/all', icon: Grid3x3 },
-        { name: 'Create Product', path: '/seller/products/create', icon: Plus },
-        { name: 'Categories', path: '/seller/products/categories', icon: Tag },
-        { name: 'Inventory', path: '/seller/products/inventory', icon: Package }
+        { name: 'Create Product', path: '/seller/product/create', icon: Plus },
+        { name: 'Inventory', path: '/seller/products/inventory', icon: Package },
+        { name: 'Draft Inventory', path: '/seller/draft/inventory', icon: PackageCheckIcon },
       ]
     },
     { name: 'Orders', path: '/seller/orders', icon: ShoppingCart, section: 'orders', badge: '12',

@@ -17,7 +17,7 @@ const productRoute = Router();
 
 //-------SELLER----------
 
-productRoute.post('/seller/create-product',authorized, isSeller, protect, uploadProductImages, createProduct)
+productRoute.post('/seller/create-product',authorized, isSeller, uploadProductImages, createProduct)
 
 productRoute.get('/seller/my-products',authorized, isSeller, protect, getMyProducts )
 productRoute.get('/seller/my-products/:productId',authorized, isSeller, protect, getProductById )

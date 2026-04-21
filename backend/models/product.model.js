@@ -1,5 +1,28 @@
 import mongoose from 'mongoose';
 
+
+const ALLOWED_CATEGORIES = [
+  'Electric Guitars',
+  'Acoustic Guitars',
+  'Bass Guitars',
+  'Classical Guitars',
+  'Ukuleles',
+  'Amplifiers',
+  'Effects Pedals',
+  'Guitar Accessories',
+  'Strings',
+  'Picks',
+  'Straps',
+  'Cases & Gig Bags',
+  'Tuners',
+  'Cables',
+  'Pickups',
+  'Parts & Hardware'
+];
+
+
+
+
 const colorSchema = new mongoose.Schema({
     name: { type: String, required: true, trim:true, lowercase:true },
     colorCode: { type: String, required: true,
@@ -38,8 +61,19 @@ const productSchema = new mongoose.Schema({
     subtitle: { type: String, trim: true },
     description: { type: String,  },
     features: { type: [String], trim: true, index:true },
-    category: { type: String, required: true, index:true, trim: true },
-    subCategory: { type: String, index:true, trim: true },
+    category: {
+         type: String,
+         enum: ALLOWED_CATEGORIES,
+         message: '{VALUE} is not a valid category. Allowed categories are: ' + ALLOWED_CATEGORIES.join(', '),
+         required: true,
+         index:true, trim: true 
+        },
+    subCategory: { 
+        type: String,
+        index:true,
+        trim: true,
+     },
+     
     brand: { type: String, required: true, index:true, trim: true },
     about:[
         {
@@ -107,7 +141,12 @@ const productSchema = new mongoose.Schema({
          default: 'draft',
          index:true
          },
-    
+
+        scheduledAt: { 
+        type: Date, 
+        default: null 
+    },  
+        
     isFeatured: { type: Boolean, default: false, index:true },
 
     isComingSoon: { type: Boolean, default: false,

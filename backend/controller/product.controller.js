@@ -1,11 +1,14 @@
 import mongoose from "mongoose";
 import ProductModel from "../models/product.model.js";
 import { uploadImage } from "../service/imagekit.service.js";
+import SellerPannel from "../models/sellerPannel.model.js";
+
 
 
 // ---- SELLER -----
 
 // CREATE PRODUCT - BY SELLER
+
 export const createProduct = async (req, res) => {
     try {
         let data = req.body;
@@ -14,71 +17,93 @@ export const createProduct = async (req, res) => {
             data = JSON.parse(data.productData);
         }
 
-        
-        data.seller = req.user._id; 
+        data.seller = req.user.id; 
 
-        const sellerPanelModel = mongoose.model('SellerPannel');
-        const sellerPanel = await sellerPanel.findOne({ user: req.user._id });
+        const sellerPanel = await SellerPannel.findOne({ 
+            user: req.user.id
+        });
 
-          if (!sellerPanel) {
+        if (!sellerPanel) {
             return res.status(400).json({
                 success: false,
-                message: "Seller profile not found. Please complete your seller registration first."
+                message: "Seller profile not found. Please complete your seller registration first.",
             });
         }
 
-         data.sellerPanel = sellerPanel._id;
+        if (data.brand && data.brand !== sellerPanel.brandName) {
+        return res.status(400).json({
+            success: false,
+            message: `Product brand must match your registered brand: ${sellerPanel.brandName}`,
+        });
+        }
 
+       
+        if (!data.brand) {
+        data.brand = sellerPanel.brandName;
+        }
 
-        const files = req.files;
+        data.sellerPanel = sellerPanel._id;
 
-        if(files?.thumbnail?.[0]){
-            const uploadResult = await uploadImage(files.thumbnail[0], "products/thumbnail");
+        
+        const files = req.files || [];
+
+        // Process thumbnail
+        const thumbnailFile = files.find(f => f.fieldname === 'thumbnail');
+        if (thumbnailFile) {
+            const uploadResult = await uploadImage(thumbnailFile, "products/thumbnail");
             data.thumbnail = uploadResult.url;
         }
 
-        if(files?.images?.length > 0){
+        // Process product images
+        const imageFiles = files.filter(f => f.fieldname === 'images');
+        if (imageFiles.length > 0) {
             const imageUrls = [];
-            for (let i = 0; i < files.images.length; i++) {
-                const uploadResult = await uploadImage(files.images[i], "products/images");
+            for (const img of imageFiles) {
+                const uploadResult = await uploadImage(img, "products/images");
                 imageUrls.push(uploadResult.url);
             }
             data.images = imageUrls;
         }
 
-        if (files?.gallery?.length > 0) {
+        // Process gallery images
+        const galleryFiles = files.filter(f => f.fieldname === 'gallery');
+        if (galleryFiles.length > 0) {
             const galleryUrls = [];
-            for (const gallery of files.gallery) {
+            for (const gallery of galleryFiles) {
                 const uploadResult = await uploadImage(gallery, 'products/gallery');
                 galleryUrls.push(uploadResult.url);
             }
             data.gallery = galleryUrls;
         }
-        
-        if (files?.preview?.[0]) {
-            const uploadResult = await uploadImage(files.preview[0], 'products/preview');
+
+        // Process preview video
+        const previewFile = files.find(f => f.fieldname === 'preview');
+        if (previewFile) {
+            const uploadResult = await uploadImage(previewFile, 'products/preview');
             data.preview = uploadResult.url;
         }
-        
-        if (files?.videos?.length > 0) {
+
+        // Process additional videos
+        const videoFiles = files.filter(f => f.fieldname === 'videos');
+        if (videoFiles.length > 0) {
             const videoUrls = [];
-            for (const video of files.videos) {
+            for (const video of videoFiles) {
                 const uploadResult = await uploadImage(video, 'products/videos');
                 videoUrls.push(uploadResult.url);
             }
             data.videos = videoUrls;
         }
 
-        if (data.showCase && Array.isArray(data.showCase)) {
-            for (let i = 0; i < data.showCase.length; i++) {
-                const showcaseFile = files?.[`showCase_${i}`]?.[0];
-                if (showcaseFile) {
-                    const uploadResult = await uploadImage(showcaseFile, 'products/showcase');
-                    data.showCase[i].image = uploadResult.url;
-                }
+        // Process showcase images (dynamic field names like 'showCase_0', 'showCase_1', etc.)
+        const showcaseFiles = files.filter(f => f.fieldname.startsWith('showCase_'));
+        if (showcaseFiles.length > 0 && data.showCase && Array.isArray(data.showCase)) {
+            for (let i = 0; i < showcaseFiles.length && i < data.showCase.length; i++) {
+                const uploadResult = await uploadImage(showcaseFiles[i], 'products/showcase');
+                data.showCase[i].image = uploadResult.url;
             }
         }
         
+    
         const requiredFields = ['title', 'category', 'brand'];
         for (const field of requiredFields) {
             if (!data[field]) {
@@ -96,10 +121,11 @@ export const createProduct = async (req, res) => {
             });
         }
 
+        
         if (data.variants && Array.isArray(data.variants)) {
             data.variants = data.variants.map(variant => {
-               const { finalPrice, ...rest} = variant;
-               return rest;
+                const { finalPrice, ...rest } = variant;
+                return rest;
             });
         }
         
@@ -128,6 +154,21 @@ export const createProduct = async (req, res) => {
             data.isComingSoon = false;
         }
 
+        if (data.status === 'scheduled') {
+            if (req.body.scheduledAt) {
+                data.scheduledAt = new Date(req.body.scheduledAt);
+            } else if (data.scheduledAt) {
+                data.scheduledAt = new Date(data.scheduledAt);
+            }
+        
+            if (data.scheduledAt && data.scheduledAt < new Date()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Scheduled date cannot be in the past'
+                });
+            }
+        }
+
         if (data.replacement && data.replacement.isAvailable && !data.replacement.duration) {
             return res.status(400).json({
                 success: false,
@@ -151,6 +192,7 @@ export const createProduct = async (req, res) => {
         });
         
     } catch (error) {
+        console.error("Create product error:", error);
         return res.status(500).json({
             success: false,
             message: error.message
@@ -161,7 +203,7 @@ export const createProduct = async (req, res) => {
 // GET MY PRODUCTS - BY SELLER
 export const getMyProducts = async (req, res) => {
     try {
-        const sellerId = req.user._id; // Get seller ID from auth middleware
+        const sellerId = req.user.id; 
         
         // Pagination parameters
         const page = parseInt(req.query.page) || 1;
@@ -238,7 +280,7 @@ export const getMyProducts = async (req, res) => {
 export const getProductById = async (req, res) => {
     try {
         const { productId } = req.params;
-        const sellerId = req.user._id;
+        const sellerId = req.user.id;
         
         const product = await ProductModel.findOne({ 
             _id: productId, 
@@ -270,7 +312,7 @@ export const getProductById = async (req, res) => {
 export const updateProduct = async (req, res) => {
     try {
         const { productId } = req.params;
-        const sellerId = req.user._id;
+        const sellerId = req.user.id;
         let updateData = req.body;
         
         // Parse if coming as FormData
@@ -406,7 +448,7 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
     try {
         const { productId } = req.params;
-        const sellerId = req.user._id;
+        const sellerId = req.user.id;
         
         // Check if product exists and belongs to seller
         const product = await ProductModel.findOne({ 
@@ -449,7 +491,7 @@ export const deleteProduct = async (req, res) => {
 export const updateProductStatus = async (req, res) => {
     try {
         const { productId } = req.params;
-        const sellerId = req.user._id;
+        const sellerId = req.user.id;
         const { status } = req.body;
         
         // Validate status
