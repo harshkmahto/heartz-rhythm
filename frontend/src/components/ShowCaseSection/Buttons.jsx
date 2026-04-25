@@ -80,6 +80,7 @@ const Button = ({
     : `bg-transparent border-2 border-${fromColor} hover:bg-${fromColor}`
   
   const baseClasses = `
+    uppercase
     text-${textColor}
     dark:text-${darkText}
     hover:bg-${hoverColor}

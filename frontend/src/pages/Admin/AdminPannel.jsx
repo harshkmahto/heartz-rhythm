@@ -101,6 +101,7 @@ const AdminPanel = () => {
         { name: 'All Products', path: '/admin/products/all', icon: Grid3x3 },
         { name: 'Price Updation', path: '/admin/products/price-update', icon: IndianRupee },
         { name: 'Reported Items', path: '/admin/products/report', icon: AlertCircle },
+        { name: 'Blocked Items', path: '/admin/products/blocked', icon: ShieldBanIcon}
         
       ]
     },

@@ -19,7 +19,7 @@ import AllUsers from "../pages/Admin/User/AllUsers";
 import OrderManagement from "../pages/Admin/OrderManagement";
 import ProductManagement from "../pages/Admin/products/ProductManagement";
 import UserManagement from "../pages/Admin/User/UserManagement";
-import WishList from "../pages/Order/WishList";
+import WishList from "../pages/Products/WishList";
 import Cart from "../pages/Order/Cart";
 import Checkout from "../pages/Order/Checkout";
 import Profile from "../pages/Auth/Profile";
@@ -50,7 +50,12 @@ import AdminAllProducts from "../pages/Admin/products/AdminAllProducts";
 import PriceUpdation from "../pages/Admin/products/PriceUpdation";
 import ReportedItems from "../pages/Admin/products/ReportedItems";
 import AdminProductDetails from "../pages/Admin/products/AdminProductDetails";
-import ProductAbout from "../components/Products/ProductAbout";
+import ProductAbout from "../pages/Products/ProductAbout";
+import SellerBrandDetails from "../pages/Products/SellerBrandDetails";
+import ReportedProducts from "../pages/Seller/ReportedProducts";
+import AdminReportDetails from "../pages/Admin/products/AdminReportDetails";
+import AllBlockedProducts from "../pages/Admin/products/AllBlockedProducts";
+import MyBlockedProducts from "../pages/Seller/MyBlockedProducts";
 
 
 
@@ -79,6 +84,7 @@ const router = createBrowserRouter([
             {path: 'category/electric', element: <ElectricCategory/>},
             {path: 'category/semi-acoustic', element: <SemiAcousticCategory/>},
             {path: 'product/details/:productCategory/:productId',element:<ProductAbout/>},
+            {path: 'seller/brand/:brandName', element:<SellerBrandDetails/>},
 
             {path: '*', element: <NotFound/>},
 
@@ -109,6 +115,8 @@ const router = createBrowserRouter([
             {path: 'products/inventory', element:<Inventory/>},
             {path: 'draft/inventory', element:<DraftInventory/>},
             {path: 'analytics', element:<SellerAnalytics/>},
+            {path: 'product/report', element:<ReportedProducts/>},
+            {path: 'products/blocked', element:<MyBlockedProducts/>},
             
         ],
     },
@@ -130,7 +138,9 @@ const router = createBrowserRouter([
             {path: 'products/all', element:<AdminAllProducts/>},
             {path: 'products/price-update', element:<PriceUpdation/>},
             {path: 'products/report', element:<ReportedItems/>},
+            {path: 'report/details/:id', element:<AdminReportDetails/>},
             {path: 'product/details/:productId', element:<AdminProductDetails/>},
+            {path: 'products/blocked', element:<AllBlockedProducts/>},
            
         ],
     }

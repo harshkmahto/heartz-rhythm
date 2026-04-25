@@ -1,15 +1,17 @@
 // ReportingProduct.jsx
 import React, { useState } from 'react';
 import { X, AlertTriangle, Flag, Send, Package, Star, Calendar, User, Mail } from 'lucide-react';
+import { createProductReport } from '../../../utils/product.apiRequest';
 
-const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
+const ReportingProduct = ({ productId, product, onClose, onReportSubmitted }) => {
   const [formData, setFormData] = useState({
+    issueType: 'inappropriate',
     subject: '',
-    message: '',
-    reportType: 'inappropriate'
+    message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const reportOptions = [
     { value: 'inappropriate', label: 'Inappropriate Content', icon: AlertTriangle },
@@ -22,6 +24,9 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
 
   const validateForm = () => {
     const newErrors = {};
+    if (!formData.issueType) {
+      newErrors.issueType = 'Please select an issue type';
+    }
     if (!formData.subject.trim()) {
       newErrors.subject = 'Subject/Regarding is required';
     }
@@ -48,29 +53,44 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
     if (!validateForm()) return;
     
     setIsSubmitting(true);
+    setSubmitStatus(null);
+    
     try {
-      if (onSubmit) {
-        await onSubmit({
-          productId,
-          ...formData
+      const reportData = {
+        issueType: formData.issueType,
+        subject: formData.subject,
+        message: formData.message
+      };
+      
+      const response = await createProductReport(productId, reportData);
+      
+      if (response.success) {
+        setSubmitStatus({ 
+          type: 'success', 
+          message: 'Report submitted successfully!' 
         });
+        
+        if (onReportSubmitted) {
+          onReportSubmitted(response.data);
+        }
+        
+        setTimeout(() => {
+          onClose();
+        }, 1500);
       }
-      // Close modal after successful submission
-      onClose();
     } catch (error) {
       console.error('Error submitting report:', error);
+      setSubmitStatus({ 
+        type: 'error', 
+        message: error.message || 'Failed to submit report. Please try again.' 
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-
-
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl bg-white dark:bg-black rounded-2xl shadow-2xl border border-red-100 dark:border-red-900 overflow-hidden animate-in fade-in zoom-in duration-200">
         
         {/* Header with Red Gradient */}
@@ -95,7 +115,6 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
         {/* Product Summary Card */}
         <div className="p-6 border-b border-red-100 dark:border-red-900/30 bg-red-50/30 dark:bg-red-950/10">
           <div className="flex gap-4">
-            {/* Product Thumbnail */}
             <div className="flex-shrink-0">
               {product?.thumbnail ? (
                 <img 
@@ -110,7 +129,6 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
               )}
             </div>
             
-            {/* Product Info */}
             <div className="flex-1">
               <h3 className="font-semibold text-red-900 dark:text-red-100 text-lg">
                 {product?.title || 'Product'}
@@ -139,6 +157,26 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
         {/* Report Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
+          {/* Success/Error Message */}
+          {submitStatus && (
+            <div className={`p-3 rounded-xl ${
+              submitStatus.type === 'success' 
+                ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+                : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+            }`}>
+              <div className="flex items-center gap-2">
+                {submitStatus.type === 'success' ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <AlertTriangle size={16} />
+                )}
+                <p className="text-sm">{submitStatus.message}</p>
+              </div>
+            </div>
+          )}
+
           {/* Report Type Selection */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 dark:text-gray-300 mb-2">
@@ -147,12 +185,12 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
             <div className="grid grid-cols-2 gap-3">
               {reportOptions.map((option) => {
                 const Icon = option.icon;
-                const isSelected = formData.reportType === option.value;
+                const isSelected = formData.issueType === option.value;
                 return (
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, reportType: option.value }))}
+                    onClick={() => setFormData(prev => ({ ...prev, issueType: option.value }))}
                     className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${
                       isSelected
                         ? 'bg-red-50 dark:bg-red-950/50 border-red-500 ring-2 ring-red-500/20'
@@ -167,6 +205,9 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
                 );
               })}
             </div>
+            {errors.issueType && (
+              <p className="mt-1 text-xs text-red-500">{errors.issueType}</p>
+            )}
           </div>
 
           {/* Subject/Regarding Field */}
@@ -227,7 +268,8 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 rounded-xl font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2.5 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 rounded-xl font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -238,7 +280,7 @@ const ReportingProduct = ({ productId, product, onClose, onSubmit }) => {
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent "></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                   Submitting...
                 </>
               ) : (

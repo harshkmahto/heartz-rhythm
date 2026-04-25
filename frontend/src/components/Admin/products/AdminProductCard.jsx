@@ -164,7 +164,7 @@ const AdminProductCard = ({ product, onClick }) => {
         )}
 
         {/* Price Section - MRP, Base Price, Final Price */}
-        <div className="border-t border-red-100 dark:border-red-900/30 pt-3 mt-2">
+        <div className="border-t border-red-100 dark:border-red-900/60 pt-3 mt-2">
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <div className="flex gap-3">
@@ -186,13 +186,9 @@ const AdminProductCard = ({ product, onClick }) => {
         </div>
 
         {/* Additional Info */}
-        <div className="mt-3 pt-2 border-t border-red-100 dark:border-red-900/30">
+        <div className="mt-3 pt-2 border-t border-red-100 dark:border-red-900/60">
           <div className="flex items-center justify-between text-xs">
-            {discountCode && (
-              <span className="text-black/50 dark:text-white/40">
-                Coupon: {discountCode}
-              </span>
-            )}
+           <span className=''>Brand: {product.brand}</span>
             {product.totalStock !== undefined && (
               <span className={`font-medium ${product.totalStock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 Total Stock: {product.totalStock}

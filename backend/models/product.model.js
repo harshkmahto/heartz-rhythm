@@ -146,6 +146,10 @@ const productSchema = new mongoose.Schema({
         type: Date, 
         default: null 
     },  
+
+    isBlocked: { type: Boolean, default: false, index:true },
+    blockReason: { type: String, trim: true },
+    blockedAt: { type: Date },
         
     isFeatured: { type: Boolean, default: false, index:true },
 
@@ -155,6 +159,7 @@ const productSchema = new mongoose.Schema({
 
      mostOrderProduct: { type: Boolean, default: false},
      bestSeller: { type: Boolean, default: false},
+     wishlistCount: { type: Number, default: 0, min: 0 },
      mostLovedProduct: { type: Boolean, default: false},
      mostViewedProduct: { type: Boolean, default: false},
      mostSerchedProduct: { type: Boolean, default: false},

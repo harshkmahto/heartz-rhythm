@@ -109,6 +109,18 @@ export const getProductStatistics = async (days) => {
 }
 
 
+//BLOCK PRODUCT
+export const blockProduct = async (productId, data) => {
+    try {
+        const response = await api.patch(`/product/admin/block-product/${productId}`, data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to block product' };
+    }
+}
+
+
+
 //-----------------PUBLIC------------------------
 
 //GET ALL PRODUCTS
@@ -132,4 +144,230 @@ export const getSinglePublicProduct = async (productId) => {
     } catch (error) {
         throw error.response?.data || { message: 'Failed to fetch product' };
     }
+}
+
+
+//-----------------WISHLIST----------------
+export const addToWishlist = async (productId) => {
+    try {
+        const response = await api.post('/product/wishlist/add', { productId });
+        return response.data;
+
+    } catch(error) {
+        throw error.response?.data || { message: 'Failed to add product to wishlist' };
     }
+}
+
+export const removeFromWishlist = async (productId) => {
+    try {
+        const response = await api.delete(`/product/wishlist/remove/${productId}`);
+        return response.data;
+    } catch(error) {
+        throw error.response?.data || { message: 'Failed to remove product from wishlist' };
+    }
+}
+
+export const clearWishlist = async () => {
+    try {
+        const response = await api.delete('/product/wishlist/clear/all');
+        return response.data;
+    } catch(error) {
+        throw error.response?.data || { message: 'Failed to clear wishlist' };
+    }
+}
+
+export const checkInWishlist = async (productId) => {
+    try {
+        const response = await api.get(`/product/wishlist/check/${productId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to check wishlist' };
+    }
+}
+
+export const getWishlistCount = async () => {
+    try {
+        const response = await api.get('/product/wishlist/count');
+        return response.data;
+    } catch(error) {
+        throw error.response?.data || { message: 'Failed to get wishlist count' };
+    }
+}
+
+export const getWishlist = async () => {
+    try {
+        const response = await api.get('/product/wishlist');
+        return response.data;
+    } catch(error){
+        throw error.response?.data || { message: 'Failed to get wishlist' };
+    }
+
+    }
+
+
+
+//-----------------PRICING RULES----------------
+
+// CREATE PRICE RULE
+export const createPriceRule = async (ruleData) => {
+    try {
+        const response = await api.post('/product/price/create', ruleData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to create price rule' };
+    }
+};
+
+// GET ALL PRICE RULES
+export const getAllPriceRules = async () => {
+    try {
+        const response = await api.get('/product/price/get-all');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch price rules' };
+    }
+};
+
+// UPDATE PRICE RULE
+export const updatePriceRule = async (ruleId, updateData) => {
+    try {
+        const response = await api.patch(`/product/price/update/${ruleId}`, updateData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to update price rule' };
+    }
+};
+
+// DELETE PRICE RULE
+export const deletePriceRule = async (ruleId) => {
+    try {
+        const response = await api.delete(`/product/price/delete/${ruleId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to delete price rule' };
+    }
+};
+
+// APPLY PRICE RULES MANUALLY
+export const applyPriceRules = async () => {
+    try {
+        const response = await api.post('/product/price/apply');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to apply price rules' };
+    }
+};
+
+// GET PRICE RULE OPTIONS (for dropdowns in UI)
+export const getPriceRuleOptions = async () => {
+    try {
+        const response = await api.get('/product/price/options');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch price rule options' };
+    }
+};
+
+// Add these report-related functions to your api.js file
+
+//-----------------REPORTS----------------
+
+// ADMIN: Create a product report
+export const createProductReport = async (productId, reportData) => {
+    try {
+        const response = await api.post(`/product/report/create/${productId}`, reportData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to create report' };
+    }
+};
+
+// ADMIN: Get all reports (with filters)
+export const getAllReports = async (params = {}) => {
+    try {
+        const response = await api.get('/product/report/get-all', { params });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch reports' };
+    }
+};
+
+// ADMIN: Get single report by ID
+export const getReportById = async (reportId) => {
+    try {
+        const response = await api.get(`/product/report/get/${reportId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch report' };
+    }
+};
+
+// ADMIN: Update a report
+export const updateReport = async (reportId, updateData) => {
+    try {
+        const response = await api.put(`/product/report/update/all/${reportId}`, updateData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to update report' };
+    }
+ };
+
+// ADMIN: Take action on report 
+export const takeActionOnReport = async (reportId, actionData) => {
+    try {
+        const response = await api.patch(`/product/report/update/${reportId}`, actionData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to update report' };
+    }
+};
+
+// ADMIN: Update report status
+export const updateReportStatus = async (reportId, status) => {
+    try {
+        const response = await api.patch(`/product/report/update/status/${reportId}`, { status });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to update report status' };
+    }
+};
+
+// ADMIN: Get report statistics
+export const getReportStatistics = async (days = 30) => {
+    try {
+        const response = await api.get(`/product/report/report-stats?days=${days}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch report statistics' };
+    }
+};
+
+// SELLER: Get my reported products (products owned by seller that have reports)
+export const getMyReportedProducts = async (params = {}) => {
+    try {
+        const response = await api.get('/product/report/my-reports', { params });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch reported products' };
+    }
+};
+
+// SELLER: Respond to a report about their product
+export const sellerRespondToReport = async (reportId, response) => {
+    try {
+        const responseData = await api.post(`/product/report/respond/${reportId}`, { response });
+        return responseData.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to submit response' };
+    }
+};
+
+// SELLER: Get single report by ID (only for their own products)
+export const getMyReportById = async (reportId) => {
+    try {
+        const response = await api.get(`/product/report/get-my/${reportId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch report' };
+    }
+};

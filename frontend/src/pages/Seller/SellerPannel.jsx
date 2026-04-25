@@ -31,7 +31,10 @@ import {
   MessageCircle,
   Clock,
   Plus,
-  PackageCheckIcon
+  PackageCheckIcon,
+  icons,
+  AlertTriangle,
+  ShieldBan
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -84,6 +87,8 @@ const SellerPanel = () => {
         { name: 'Create Product', path: '/seller/product/create', icon: Plus },
         { name: 'Inventory', path: '/seller/products/inventory', icon: Package },
         { name: 'Draft Inventory', path: '/seller/draft/inventory', icon: PackageCheckIcon },
+        { name: 'Reports', path: '/seller/product/report', icon: AlertTriangle },
+        { name: 'Blocked', path: '/seller/products/blocked', icon: ShieldBan },
       ]
     },
     { name: 'Orders', path: '/seller/orders', icon: ShoppingCart, section: 'orders', badge: '12',

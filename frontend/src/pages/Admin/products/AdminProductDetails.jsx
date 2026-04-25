@@ -9,11 +9,15 @@ import {
   Percent, Grid3x3, Edit3, TrendingUp,
   X, Zap, Store, Mail, Phone, MapPin, Building,
   CreditCard, Shield, User, Briefcase, Hash, Link as LinkIcon,
-  Calendar as CalendarIcon, Timer
+  Calendar as CalendarIcon, Timer,
+  AlertTriangle,
+  Trash,
+  ShieldBan
 } from 'lucide-react';
 import { getSingleProduct } from '../../../utils/product.apiRequest';
 import { FaRegCopyright } from 'react-icons/fa';
 import ReportingPRoduct from '../../../components/Admin/products/ReportingProduct';
+import BlockProducts from '../../../components/Admin/products/BlockProducts';
 
 
 const AdminProductDetails = () => {
@@ -25,6 +29,7 @@ const AdminProductDetails = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [reportPopup, setReportPopup] = useState(false)
+  const [blockPopup, setBlockPopup] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
@@ -98,6 +103,15 @@ const AdminProductDetails = () => {
     setReportPopup(false);
   };
 
+  const handleBlock = () => {
+    setSelectedProduct(product);
+    setBlockPopup(true);
+  };
+
+  const handleCloseBlock = () => {
+    setBlockPopup(false);
+  };
+
   
 
   if (loading) {
@@ -150,8 +164,15 @@ const AdminProductDetails = () => {
               onClick={handleReport}
               className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all cursor-pointer"
             >
-              <FaRegCopyright size={16} />
-              Report Product
+              <AlertTriangle size={16} />
+              Report
+            </button>
+
+            <button 
+              onClick={handleBlock}
+              className='flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all cursor-pointer'>
+              <ShieldBan size={16} />
+              {product.isBlocked ? 'Unblock' : 'Block'}
             </button>
           </div>
         </div>
@@ -166,6 +187,18 @@ const AdminProductDetails = () => {
         </div>
         </div>
         )}
+
+        {blockPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="relative w-full max-w-md rounded-2xl">
+            <BlockProducts
+            product={selectedProduct}
+            productId={product._id}
+            onClose={handleCloseBlock}/>
+        </div>
+        </div>
+        )}
+
 
         {/* PRODUCT DETAILS SECTION */}
         <div className="mb-8">

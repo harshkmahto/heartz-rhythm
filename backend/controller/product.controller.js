@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import ProductModel from "../models/product.model.js";
 import { uploadImage } from "../service/imagekit.service.js";
 import SellerPannel from "../models/sellerPannel.model.js";
+import ReportModel from "../models/adminReport.model.js";
+import userModel from "../models/user.model.js";
 
 
 
@@ -120,13 +122,16 @@ export const createProduct = async (req, res) => {
             });
         }
 
-        
         if (data.variants && Array.isArray(data.variants)) {
-            data.variants = data.variants.map(variant => {
-                const { finalPrice, ...rest } = variant;
-                return rest;
-            });
+    data.variants = data.variants.map(variant => {
+        if (variant.finalPrice === undefined || variant.finalPrice === null) {
+            variant.finalPrice = variant.basePrice;
         }
+        return variant;
+    });
+}
+
+        
         
         if (data.variants) {
             data.totalStock = data.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
@@ -385,17 +390,19 @@ export const updateProduct = async (req, res) => {
             }
         }
         
-        // Remove finalPrice from variants if present
+    
         if (updateData.variants && Array.isArray(updateData.variants)) {
             updateData.variants = updateData.variants.map(variant => {
-                const { finalPrice, ...rest } = variant;
-                return rest;
+                if (variant.finalPrice === undefined || variant.finalPrice === null) {
+                    variant.finalPrice = variant.basePrice;
+                }
+                return variant;
             });
             
             // Recalculate total stock
             updateData.totalStock = updateData.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
             
-            // Update isAvailable based on stock
+          
             if (updateData.totalStock === 0) {
                 updateData.isAvailable = false;
             } else {
@@ -525,6 +532,206 @@ export const updateProductStatus = async (req, res) => {
         });
         
     } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const getReportedProductsForSeller = async (req, res) => {
+    try {
+        const sellerId = req.user.id;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+        
+        const { status, issueType, fromDate, toDate } = req.query;
+        
+        // First, get all products of this seller
+        const sellerProducts = await ProductModel.find({ 
+            seller: sellerId 
+        }).select('_id title thumbnail brand status');
+        
+        const productIds = sellerProducts.map(p => p._id);
+        
+        if (productIds.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No products found for this seller',
+                data: {
+                    products: [],
+                    totalReports: 0,
+                    pagination: {
+                        currentPage: page,
+                        totalPages: 0,
+                        totalProducts: 0,
+                        limit
+                    }
+                }
+            });
+        }
+        
+        // Build filter for reports
+        let filter = { 
+            product: { $in: productIds }
+        };
+        
+        if (status) filter.status = status;
+        if (issueType) filter.issueType = issueType;
+        
+        if (fromDate || toDate) {
+            filter.createdAt = {};
+            if (fromDate) filter.createdAt.$gte = new Date(fromDate);
+            if (toDate) filter.createdAt.$lte = new Date(toDate);
+        }
+        
+        // Get all reports for seller's products
+        const allReports = await ReportModel.find(filter)
+            .populate('product', 'title thumbnail brand status')
+            .populate('reportedBy', 'name email')
+            .sort({ createdAt: -1 })
+            .lean();
+        
+        // Group reports by product
+        const productsWithReports = {};
+        allReports.forEach(report => {
+            const productId = report.product._id.toString();
+            if (!productsWithReports[productId]) {
+                const productInfo = sellerProducts.find(p => p._id.toString() === productId);
+                productsWithReports[productId] = {
+                    product: {
+                        _id: productId,
+                        title: productInfo?.title,
+                        thumbnail: productInfo?.thumbnail,
+                        brand: productInfo?.brand,
+                        status: productInfo?.status
+                    },
+                    reports: [],
+                    reportCount: 0,
+                    pendingCount: 0,
+                    resolvedCount: 0,
+                    dismissedCount: 0,
+                    lastReportDate: null
+                };
+            }
+            
+            productsWithReports[productId].reports.push(report);
+            productsWithReports[productId].reportCount++;
+            
+            if (report.status === 'pending') productsWithReports[productId].pendingCount++;
+            if (report.status === 'resolved') productsWithReports[productId].resolvedCount++;
+            if (report.status === 'dismissed') productsWithReports[productId].dismissedCount++;
+            
+            if (!productsWithReports[productId].lastReportDate || 
+                new Date(report.createdAt) > new Date(productsWithReports[productId].lastReportDate)) {
+                productsWithReports[productId].lastReportDate = report.createdAt;
+            }
+        });
+        
+        // Convert to array and paginate
+        let productsArray = Object.values(productsWithReports);
+        
+        // Sort by last report date
+        productsArray.sort((a, b) => new Date(b.lastReportDate) - new Date(a.lastReportDate));
+        
+        const totalProducts = productsArray.length;
+        const paginatedProducts = productsArray.slice(skip, skip + limit);
+        
+        // Get summary statistics
+        const summaryStats = {
+            totalProductsWithReports: totalProducts,
+            totalReports: allReports.length,
+            pendingReports: allReports.filter(r => r.status === 'pending').length,
+            resolvedReports: allReports.filter(r => r.status === 'resolved').length,
+            dismissedReports: allReports.filter(r => r.status === 'dismissed').length,
+            byIssueType: allReports.reduce((acc, r) => {
+                acc[r.issueType] = (acc[r.issueType] || 0) + 1;
+                return acc;
+            }, {})
+        };
+        
+        const totalPages = Math.ceil(totalProducts / limit);
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Reported products fetched successfully',
+            data: {
+                products: paginatedProducts,
+                summary: summaryStats,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalProducts,
+                    limit,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Get reported products for seller error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// SELLER RESPONDS TO REPORT
+export const sellerRespondToReport = async (req, res) => {
+    try {
+        const { reportId } = req.params;
+        const { response } = req.body;
+        const sellerId = req.user.id;
+        
+        if (!response || response.trim().length < 5) {
+            return res.status(400).json({
+                success: false,
+                message: 'Response must be at least 5 characters'
+            });
+        }
+        
+        const report = await ReportModel.findById(reportId);
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                message: 'Report not found'
+            });
+        }
+        
+        // Verify seller owns the product
+        const product = await ProductModel.findOne({
+            _id: report.product,
+            seller: sellerId
+        });
+        
+        if (!product) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only respond to reports about your own products.'
+            });
+        }
+        
+        report.sellerResponse = {
+            message: response,
+            respondedAt: new Date(),
+            respondedBy: sellerId
+        };
+        report.sellerAcknowledgedAt = new Date();
+        await report.save();
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Response added successfully',
+            data: {
+                sellerResponse: report.sellerResponse
+            }
+        });
+        
+    } catch (error) {
+        console.error('Seller respond to report error:', error);
         return res.status(500).json({
             success: false,
             message: error.message
@@ -813,8 +1020,624 @@ export const getProductStatistics = async (req, res) => {
     }
 };
 
+// BLOCK PRODUCT
+export const blockProduct = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const { isBlocked, blockReason } = req.body;
+        
+        const product = await ProductModel.findById( productId );
+        
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
 
-//---------PUBLIC--------
+        product.isBlocked = isBlocked;
+        
+        if (isBlocked) {
+            product.blockReason = blockReason || "No reason Provided" ;
+            product.blockedAt = new Date();
+        } else {
+            product.blockReason = null;
+            product.blockedAt = null;
+        }
+        await product.save();
+        
+       return res.status(200).json({
+            success: true,
+            message: isBlocked ? "Product blocked successfully" : "Product unblocked successfully",
+            data: product
+        });
+        
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+    }
+
+
+// CREATE PRODUCT REPORT
+export const createProductReport = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const { issueType, subject, message } = req.body;
+        const adminId = req.user.id; 
+        
+        if (!issueType || !subject || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'Issue type, subject, and message are required'
+            });
+        }
+        
+        const product = await ProductModel.findById(productId)
+            .populate('seller', 'name email')
+            .populate('sellerPanel', 'brandName')
+            .lean();
+        
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+        
+        const existingReport = await ReportModel.findOne({
+            product: productId,
+            reportedBy: adminId,
+            status: { $in: ['pending', 'under-review'] }
+        });
+        
+        if (existingReport) {
+            return res.status(400).json({
+                success: false,
+                message: 'You already have a pending report for this product'
+            });
+        }
+        
+        // Create product snapshot
+        const productSnapshot = {
+            productId: product._id,
+            title: product.title,
+            thumbnail: product.thumbnail,
+            brand: product.brand,
+            category: product.category,
+            subCategory: product.subCategory,
+            status: product.status,
+            seller: {
+                sellerId: product.seller?._id,
+                sellerName: product.seller?.name,
+                sellerEmail: product.seller?.email,
+                brandName: product.sellerPanel?.brandName
+            }
+        };
+        
+        let priority = 'medium';
+        if (issueType === 'fake') priority = 'urgent';
+        if (issueType === 'spam') priority = 'high';
+        
+        // Create the report
+        const report = await ReportModel.create({
+            reportedBy: adminId,
+            product: productId,
+            productSnapshot,
+            issueType,
+            subject,
+            message,
+            priority
+        });
+        
+        const populatedReport = await ReportModel.findById(report._id)
+            .populate('reportedBy', 'name email role')
+            .populate('product', 'title thumbnail')
+            .lean();
+        
+        return res.status(201).json({
+            success: true,
+            message: 'Product reported successfully',
+            data: populatedReport
+        });
+        
+    } catch (error) {
+        console.error('Create report error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+// GET ALL REPORTS FOR ADMIN
+export const getAllReports = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+        
+        // Filter parameters
+        const { 
+            status, 
+            priority, 
+            issueType,
+            productId,
+            sellerId,
+            search,
+            fromDate,
+            toDate,
+            sortBy = 'createdAt',
+            sortOrder = 'desc'
+        } = req.query;
+        
+        // Build filter object
+        let filter = {};
+        
+        if (status) filter.status = status;
+        if (priority) filter.priority = priority;
+        if (issueType) filter.issueType = issueType;
+        if (productId) filter.product = productId;
+        if (sellerId) filter['productSnapshot.seller.sellerId'] = sellerId;
+        
+        // Date range filter
+        if (fromDate || toDate) {
+            filter.createdAt = {};
+            if (fromDate) filter.createdAt.$gte = new Date(fromDate);
+            if (toDate) filter.createdAt.$lte = new Date(toDate);
+        }
+        
+        // Search in subject or message
+        if (search) {
+            filter.$or = [
+                { subject: { $regex: search, $options: 'i' } },
+                { message: { $regex: search, $options: 'i' } },
+                { reportId: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
+        // Sort
+        const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+        
+        // Execute queries
+        const [reports, totalReports] = await Promise.all([
+            ReportModel.find(filter)
+                .populate('reportedBy', 'name email role')
+                .populate('product', 'title thumbnail brand status')
+                .populate('resolvedBy', 'name email')
+                .sort(sort)
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            ReportModel.countDocuments(filter)
+        ]);
+        
+        // Get statistics
+        const stats = await Promise.all([
+            ReportModel.countDocuments({ status: 'pending' }),
+            ReportModel.countDocuments({ status: 'under-review' }),
+            ReportModel.countDocuments({ status: 'resolved' }),
+            ReportModel.countDocuments({ status: 'dismissed' }),
+            ReportModel.countDocuments({ priority: 'urgent' }),
+            ReportModel.countDocuments({ priority: 'high' }),
+            ReportModel.aggregate([
+                { $group: { _id: '$issueType', count: { $sum: 1 } } }
+            ])
+        ]);
+        
+        const totalPages = Math.ceil(totalReports / limit);
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Reports fetched successfully',
+            data: {
+                reports,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalReports,
+                    limit,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1
+                },
+                stats: {
+                    pending: stats[0],
+                    underReview: stats[1],
+                    resolved: stats[2],
+                    dismissed: stats[3],
+                    urgent: stats[4],
+                    high: stats[5],
+                    byIssueType: stats[6]
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Get reports error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// UPDATE STATUS
+export const updateReportStatus = async (req, res) => {
+    try {
+        const { reportId } = req.params;
+        const { status, adminRemarks } = req.body;
+        const adminId = req.user.id;
+        
+        const validStatuses = ['pending', 'under-review', 'resolved', 'dismissed'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status value'
+            });
+        }
+        
+        const report = await ReportModel.findById(reportId);
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                message: 'Report not found'
+            });
+        }
+        
+        report.status = status;
+        if (adminRemarks) report.adminRemarks = adminRemarks;
+        
+        if (status === 'resolved') {
+            report.resolvedAt = new Date();
+            report.resolvedBy = adminId;
+        }
+        
+        report.updatedAt = new Date();
+        await report.save();
+        
+        const updatedReport = await ReportModel.findById(reportId)
+            .populate('reportedBy', 'name email')
+            .populate('resolvedBy', 'name email')
+            .lean();
+        
+        return res.status(200).json({
+            success: true,
+            message: `Report status updated to ${status}`,
+            data: updatedReport
+        });
+        
+    } catch (error) {
+        console.error('Update report status error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// TAKE ACTION ON REPORT - Admin only
+export const takeActionOnReport = async (req, res) => {
+    try {
+        const { reportId } = req.params;
+        const { action, adminRemarks } = req.body;
+        const adminId = req.user.id;
+        
+        const validActions = ['none', 'warning', 'product_hidden', 'product_removed', 'seller_warning', 'seller_suspended'];
+        if (!validActions.includes(action)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid action value'
+            });
+        }
+        
+        const report = await ReportModel.findById(reportId);
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                message: 'Report not found'
+            });
+        }
+        
+        report.actionTaken = action;
+        if (adminRemarks) report.adminRemarks = adminRemarks;
+        report.updatedAt = new Date();
+        
+        // Apply action to product
+        if (action === 'product_hidden' || action === 'product_removed') {
+            const product = await ProductModel.findById(report.product);
+            if (product) {
+                product.status = 'draft';
+                await product.save();
+            }
+        }
+        
+        // Apply action to seller
+        if (action === 'seller_suspended' && report.productSnapshot.seller.sellerId) {
+            await userModel.findByIdAndUpdate(report.productSnapshot.seller.sellerId, {
+                isBlocked: true,
+                adminNote: adminRemarks
+            });
+        }
+        
+        await report.save();
+        
+        const updatedReport = await ReportModel.findById(reportId)
+            .populate('reportedBy', 'name email')
+            .populate('product', 'title status')
+            .lean();
+        
+        return res.status(200).json({
+            success: true,
+            message: `Action '${action}' taken successfully`,
+            data: updatedReport
+        });
+        
+    } catch (error) {
+        console.error('Take action error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+//  UPDATE REPORT - Admin  (updates status, priority, action, remarks)
+export const updateReport = async (req, res) => {
+    try {
+        const { reportId } = req.params;
+        const { status, priority, action, adminRemarks } = req.body;
+        const adminId = req.user.id;
+        
+        const report = await ReportModel.findById(reportId);
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                message: 'Report not found'
+            });
+        }
+        
+        // Update status if provided
+        if (status) {
+            const validStatuses = ['pending', 'under-review', 'resolved', 'dismissed'];
+            if (!validStatuses.includes(status)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid status value'
+                });
+            }
+            report.status = status;
+            if (status === 'resolved') {
+                report.resolvedAt = new Date();
+                report.resolvedBy = adminId;
+            }
+        }
+        
+        // Update priority if provided
+        if (priority) {
+            const validPriorities = ['low', 'medium', 'high', 'urgent'];
+            if (!validPriorities.includes(priority)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid priority value'
+                });
+            }
+            report.priority = priority;
+        }
+        
+    
+        if (action !== undefined) {
+            const validActions = ['none', 'warning', 'product_hidden', 'product_removed', 'seller_warning', 'seller_suspended'];
+            if (!validActions.includes(action)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid action value'
+                });
+            }
+            report.actionTaken = action;
+            
+        
+            if (action === 'product_hidden' || action === 'product_removed') {
+                const product = await ProductModel.findById(report.product);
+                if (product) {
+                    product.status = 'draft';
+                    product.isAvailable = false;
+                    await product.save();
+                }
+            }
+            
+            // Apply action to seller
+            if (action === 'seller_suspended' && report.productSnapshot.seller.sellerId) {
+                await userModel.findByIdAndUpdate(report.productSnapshot.seller.sellerId, {
+                    isBlocked: true,
+                    adminNote: adminRemarks,
+                    blockedAt: new Date()
+                });
+            }
+        }
+        
+        // Update remarks if provided
+        if (adminRemarks !== undefined) {
+            report.adminRemarks = adminRemarks;
+        }
+        
+        report.updatedAt = new Date();
+        await report.save();
+        
+        const updatedReport = await ReportModel.findById(reportId)
+            .populate('reportedBy', 'name email role')
+            .populate('resolvedBy', 'name email')
+            .populate('product', 'title thumbnail status')
+            .lean();
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Report updated successfully',
+            data: updatedReport
+        });
+        
+    } catch (error) {
+        console.error('Update report error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// GET REPORT STATISTICS - Admin
+export const getReportStatistics = async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const dateLimit = new Date();
+        dateLimit.setDate(dateLimit.getDate() - parseInt(days));
+        
+        const [
+            totalReports,
+            pendingReports,
+            resolvedReports,
+            dismissedReports,
+            urgentReports,
+            reportsByDay,
+            topReportedProducts,
+            topReportingAdmins,
+            reportsByIssueType
+        ] = await Promise.all([
+            ReportModel.countDocuments(),
+            ReportModel.countDocuments({ status: 'pending' }),
+            ReportModel.countDocuments({ status: 'resolved' }),
+            ReportModel.countDocuments({ status: 'dismissed' }),
+            ReportModel.countDocuments({ priority: 'urgent' }),
+            ReportModel.aggregate([
+                { $match: { createdAt: { $gte: dateLimit } } },
+                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+                { $sort: { '_id': 1 } }
+            ]),
+            ReportModel.aggregate([
+                { $group: { _id: '$product', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 },
+                { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
+                { $unwind: '$product' },
+                { $project: { title: '$product.title', count: 1 } }
+            ]),
+            ReportModel.aggregate([
+                { $group: { _id: '$reportedBy', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 },
+                { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'admin' } },
+                { $unwind: '$admin' },
+                { $project: { name: '$admin.name', email: '$admin.email', count: 1 } }
+            ]),
+            ReportModel.aggregate([
+                { $group: { _id: '$issueType', count: { $sum: 1 } } },
+                { $sort: { count: -1 } }
+            ])
+        ]);
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Report statistics fetched successfully',
+            data: {
+                overview: {
+                    totalReports,
+                    pendingReports,
+                    resolvedReports,
+                    dismissedReports,
+                    urgentReports
+                },
+                dailyTrends: reportsByDay,
+                topReportedProducts,
+                topReportingAdmins,
+                reportsByIssueType
+            }
+        });
+        
+    } catch (error) {
+        console.error('Get report statistics error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+//---------------seller and admin
+// GET SINGLE REPORT DETAILS
+export const getReportById = async (req, res) => {
+    try {
+        const { reportId } = req.params;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        
+        const report = await ReportModel.findById(reportId)
+            .populate('reportedBy', 'name email role avatar createdAt')
+            .populate('product', 'title thumbnail brand status variants totalStock totalSold')
+            .populate('resolvedBy', 'name email role')
+            .lean();
+        
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                message: 'Report not found'
+            });
+        }
+        
+
+        if (userRole === 'seller') {
+            const product = await ProductModel.findOne({
+                _id: report.product,
+                seller: userId
+            });
+            
+            if (!product) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. This report is not about your product.'
+                });
+            }
+        }
+        
+    
+        const product = await ProductModel.findById(report.product)
+            .populate('seller', 'name email')
+            .populate('sellerPanel', 'brandName storeName logo')
+            .lean();
+        
+        const productReports = await ReportModel.find({
+            product: report.product,
+            _id: { $ne: reportId }
+        })
+            .populate('reportedBy', 'name email')
+            .select('reportId issueType status priority createdAt')
+            .sort({ createdAt: -1 })
+            .lean();
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Report fetched successfully',
+            data: {
+                report,
+                productDetails: product,
+                relatedReports: {
+                    count: productReports.length,
+                    list: productReports
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Get report error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 
 //---------PUBLIC--------
 
@@ -837,7 +1660,8 @@ export const getAllPublicProducts = async (req, res) => {
         
         // Build filter - only active products
         let filter = { 
-            status: 'active'
+            status: 'active',
+            isBlocked: false
         };
         
         if (category) {
@@ -981,7 +1805,8 @@ export const getSinglePublicProduct = async (req, res) => {
         
         const product = await ProductModel.findOne({ 
             _id: productId, 
-            status: 'active'
+            status: 'active',
+            isBlocked: false
         })
         .select('title subtitle description features about showCase thumbnail images gallery preview videos variants discount totalStock category subCategory brand replacement return seo isFeatured mostOrderProduct bestSeller mostLovedProduct mostViewedProduct mostSerchedProduct totalSold viewCount searchCount createdAt updatedAt')
         .populate('sellerPanel', 'brandName brandDescription brandCategory brandSubCategory logo coverImage sellerName companyLocation brandSince brandSpeciality')
@@ -1041,3 +1866,5 @@ export const getSinglePublicProduct = async (req, res) => {
         });
     }
 };
+
+
