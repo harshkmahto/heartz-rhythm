@@ -1,8 +1,11 @@
 import React from 'react'
 
-const RoundedText = ({ text }) => {
+const RoundedText = ({ text,
+   textColor='black',
+    darkText='white',
+   }) => {
   return (
-    <h1 className="relative w-fit px-4 py-1 uppercase mx-auto border border-red-500/50  md:text-2xl text-xl font-bold  font-machina  leading-none pt-1.5 inline-block text-black dark:text-white">
+    <h1 className={`relative w-fit px-4 py-1 uppercase mx-auto border border-red-500/50  md:text-2xl text-xl font-bold  font-machina  leading-none pt-1.5 inline-block text-${textColor} dark:${darkText}`}>
       {text}
       
       {/* Top Left Dot */}

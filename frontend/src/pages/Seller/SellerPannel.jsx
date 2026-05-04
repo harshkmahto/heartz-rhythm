@@ -86,9 +86,9 @@ const SellerPanel = () => {
         { name: 'All Products', path: '/seller/products/all', icon: Grid3x3 },
         { name: 'Create Product', path: '/seller/product/create', icon: Plus },
         { name: 'Inventory', path: '/seller/products/inventory', icon: Package },
-        { name: 'Draft Inventory', path: '/seller/draft/inventory', icon: PackageCheckIcon },
         { name: 'Reports', path: '/seller/product/report', icon: AlertTriangle },
         { name: 'Blocked', path: '/seller/products/blocked', icon: ShieldBan },
+        { name: 'Store Inventory', path: '/seller/draft/inventory', icon: PackageCheckIcon },
       ]
     },
     { name: 'Orders', path: '/seller/orders', icon: ShoppingCart, section: 'orders', badge: '12',

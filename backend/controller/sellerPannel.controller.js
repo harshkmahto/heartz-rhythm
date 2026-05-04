@@ -1,3 +1,4 @@
+import ProductModel from "../models/product.model.js";
 import SellerPannel from "../models/sellerPannel.model.js";
 import { uploadImage, deleteImage, updateImage } from "../service/imagekit.service.js";
 
@@ -12,7 +13,7 @@ export const createSellerPannel = async (req, res) => {
             gstNumber, panNumber,
             bankName, accountNumber, ifscCode, bankBranch, bankUserName, upi,
             companyLocation, companyAddress,
-            pickupLocation, pickupAddress 
+            pickupLocation, pickupAddress, status
         } = req.body;
 
         // Check if seller panel already exists
@@ -24,6 +25,19 @@ export const createSellerPannel = async (req, res) => {
                 message: "Seller panel already exists for this user. Use update endpoint instead."
             });
         }
+
+         let parsedFeatures = brandFeatures;
+        if (typeof brandFeatures === 'string') {
+            try {
+                parsedFeatures = JSON.parse(brandFeatures);
+            } catch (e) {
+                parsedFeatures = brandFeatures.split(',').map(f => f.trim());
+            }
+        }
+        if (!Array.isArray(parsedFeatures)) {
+            parsedFeatures = [];
+        }
+
 
         // Upload images to ImageKit
         let coverImageUrl = null;
@@ -64,7 +78,7 @@ export const createSellerPannel = async (req, res) => {
             brandPhone, 
             brandEmail,
             brandSpeciality, 
-            brandFeatures, 
+            brandFeatures: parsedFeatures, 
             brandSince,
             sellerName, 
             sellerEmail, 
@@ -80,7 +94,8 @@ export const createSellerPannel = async (req, res) => {
             companyLocation, 
             companyAddress,
             pickupLocation, 
-            pickupAddress
+            pickupAddress,
+            status: status || 'inactive'
         });
 
         return res.status(201).json({
@@ -223,7 +238,7 @@ export const updateBasicDetails = async (req, res) => {
             brandCategory, brandSubCategory, brandPhone, brandEmail, 
             brandSpeciality, brandFeatures, brandSince,
             companyLocation, companyAddress,
-            sellerName
+            sellerName, status
         } = req.body;
 
         // Check if seller panel exists
@@ -259,7 +274,8 @@ export const updateBasicDetails = async (req, res) => {
             brandSince,
             companyLocation,
             companyAddress,
-            sellerName
+            sellerName,
+            status
         };
 
         // Remove undefined values
@@ -299,7 +315,7 @@ export const updatePersonalDetails = async (req, res) => {
             sellerEmail, sellerPhone,
             gstNumber, panNumber,
             bankName, accountNumber, ifscCode, bankBranch, bankUserName, upi,
-            pickupLocation, pickupAddress
+            pickupLocation, pickupAddress, status
         } = req.body;
 
         // Check if seller panel exists
@@ -325,7 +341,8 @@ export const updatePersonalDetails = async (req, res) => {
             bankUserName,
             upi,
             pickupLocation,
-            pickupAddress
+            pickupAddress,
+            status
         };
 
         // Remove undefined values
@@ -356,6 +373,46 @@ export const updatePersonalDetails = async (req, res) => {
     }
 };
 
+export const updateStatus = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { status } = req.body;
+
+        if (!['active', 'inactive'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid status. Must be 'active' or 'inactive'."
+            });
+        }
+
+        const sellerPanel = await SellerPannel.findOne({ user: userId });
+
+        if (!sellerPanel) {
+            return res.status(404).json({
+                success: false,
+                message: "Seller panel not found"
+            });
+        
+        }
+
+        sellerPanel.status = status;
+        await sellerPanel.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Status updated successfully",
+            data: sellerPanel
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update status",
+            error: error.message
+        });
+        
+    }
+}
 
 // Get Seller Panel
 export const getMySellerPanel = async (req, res) => {
@@ -384,12 +441,15 @@ export const getMySellerPanel = async (req, res) => {
 };
 
 
-// Get ALL Seller Panels 
+// GET ALL SELLER FOR PUBLIC
 export const getAllSellerPanels = async (req, res) => {
     try {
-        const sellerPanels = await SellerPannel.find()
-            .select('coverImage logo previewImage brandName brandDescription brandCategory brandSubCategory brandPhone brandEmail brandSpeciality brandFeatures brandSince sellerName companyLocation createdAt updatedAt');
 
+        const query = { status: 'active'}
+
+        const sellerPanels = await SellerPannel.find(query)
+            .select('coverImage logo previewImage brandName brandDescription brandCategory brandSubCategory brandPhone brandEmail brandSpeciality brandFeatures brandSince sellerName companyLocation reviews  ');
+            
         return res.status(200).json({
             success: true,
             count: sellerPanels.length,
@@ -406,14 +466,16 @@ export const getAllSellerPanels = async (req, res) => {
 };
 
 
-// Get Single Seller Panel by Panel ID 
+// GET SINGLE SELLER FOR PUBLIC
 export const getSellerPanelById = async (req, res) => {
     try {
         const { panelId } = req.params;
 
 
-        const sellerPanel = await SellerPannel.findById(panelId)
-            .select('coverImage logo previewImage brandName brandDescription brandCategory brandSubCategory brandPhone brandEmail brandSpeciality brandFeatures brandSince sellerName companyLocation createdAt updatedAt');
+        const sellerPanel = await SellerPannel.findOne({
+            _id: panelId,
+            status: 'active'
+        }).select('coverImage logo previewImage brandName brandDescription brandCategory brandSubCategory brandPhone brandEmail brandSpeciality brandFeatures brandSince sellerName companyLocation reviews ');
 
         if (!sellerPanel) {
             return res.status(404).json({
@@ -425,9 +487,10 @@ export const getSellerPanelById = async (req, res) => {
         
         const products = await ProductModel.find({ 
             sellerPanel: panelId,
-            status: 'active'  
+            status: 'active',
+            isBlocked: false, 
         })
-        .select('title thumbnail images category mrp finalPrice discount ') 
+        .select('title thumbnail category  discount ') 
         .sort({ createdAt: -1 }); 
 
         return res.status(200).json({
@@ -445,6 +508,55 @@ export const getSellerPanelById = async (req, res) => {
         return res.status(500).json({ 
             success: false,
             message: "Failed to fetch seller panel", 
+            error: err.message 
+        });
+    }
+};
+
+//GET SELLER FOR ADMIN
+export const getSellerForAdmin = async (req, res) => {
+    try {
+        const sellerPanels = await SellerPannel.find()
+        
+        return res.status(200).json({
+            success: true,
+            count: sellerPanels.length,
+            data: sellerPanels
+        });
+     
+    } catch (err) {
+        return res.status(500).json({ 
+            success: false,
+            message: "Failed to fetch seller panels", 
+            error: err.message 
+        });
+    }
+};
+
+// GET SINGLE SELLER FOR ADMIN
+export const getSellerByIdForAdmin = async (req, res) => {
+    try {
+        const { pannelId } = req.params;  
+
+        const sellerPanel = await SellerPannel.findById(pannelId)  
+            .populate('user', 'name email');
+
+        if (!sellerPanel) {
+            return res.status(404).json({
+                success: false,
+                message: "Seller panel not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: sellerPanel  
+        });
+
+    } catch (err) {
+        return res.status(500).json({ 
+            success: false,
+            message: "Failed to fetch seller information", 
             error: err.message 
         });
     }

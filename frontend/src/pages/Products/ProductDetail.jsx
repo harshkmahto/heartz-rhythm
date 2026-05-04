@@ -1,186 +1,458 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import { Star, ShoppingBag, Zap, Hand, Wrench, Mountain, ArrowRight, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { getComingSoonDetails } from '../../utils/product.apiRequest';
+import {
+  Calendar, Clock, Bell, Tag, Sparkles, 
+  X, Share2, CheckCircle, Package, 
+  Truck, Shield, Eye, Building2, 
+  Copy, Check, ChevronLeft, ChevronRight
+} from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [currentModalIndex, setCurrentModalIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetchProductDetails();
+  }, [id]);
+
+  const fetchProductDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await getComingSoonDetails(id);
+      if (response.success) {
+        setProduct(response.data);
+        // Use gallery images first, fallback to images
+        const displayImages = response.data.gallery?.length > 0 
+          ? response.data.gallery 
+          : response.data.images || [];
+        if (displayImages.length > 0) {
+          setSelectedImage(displayImages[0]);
+        }
+      } else {
+        setError(response.message || 'Failed to fetch product');
+      }
+    } catch (err) {
+      console.error('Error fetching product:', err);
+      setError(err.message || 'Failed to fetch product');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get gallery images (priority), fallback to images
+  const galleryImages = product?.gallery?.length > 0 
+    ? product.gallery 
+    : product?.images || [];
+  const hasGallery = galleryImages.length > 0;
+
+  const openImageModal = (imageUrl, index) => {
+    setSelectedImage(imageUrl);
+    setCurrentModalIndex(index);
+    setImageModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeImageModal = () => {
+    setImageModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const nextImage = () => {
+    if (currentModalIndex < galleryImages.length - 1) {
+      const newIndex = currentModalIndex + 1;
+      setCurrentModalIndex(newIndex);
+      setSelectedImage(galleryImages[newIndex]);
+    }
+  };
+
+  const prevImage = () => {
+    if (currentModalIndex > 0) {
+      const newIndex = currentModalIndex - 1;
+      setCurrentModalIndex(newIndex);
+      setSelectedImage(galleryImages[newIndex]);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const url = window.location.href;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Countdown timer
+  const getTimeLeft = () => {
+    if (!product?.scheduledAt) return null;
+    const now = new Date();
+    const target = new Date(product.scheduledAt);
+    const difference = target - now;
+    
+    if (difference <= 0) return null;
+    
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+      seconds: Math.floor((difference % (1000 * 60)) / 1000)
+    };
+  };
+
+  const timeLeft = getTimeLeft();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-rose-50 dark:from-gray-950 dark:via-black dark:to-red-950">
+        <div className="text-center">
+          <div className="relative w-20 h-20 mx-auto">
+            <div className="absolute inset-0 border-4 border-red-200 dark:border-red-900/30 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-t-red-600 border-r-red-500 border-b-red-400 border-l-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400 animate-pulse">Loading product details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-rose-50 dark:from-gray-950 dark:via-black dark:to-red-950">
+        <div className="text-center bg-red-50 dark:bg-red-900/20 p-8 rounded-2xl max-w-md">
+          <div className="text-red-600 text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mb-2">Product Not Found</h3>
+          <p className="text-red-600 dark:text-red-300">{error || 'The product you are looking for does not exist.'}</p>
+          <Link to="/" className="inline-block mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all">
+            Go Back Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-[var(--color-bg)] text-[var(--color-text-main)] w-full">
-      <main className="pt-10 md:pt-20 pb-20 px-6 md:px-8 max-w-7xl mx-auto">
-        {/* Product Section Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 items-start">
-          {/* Gallery Block */}
-          <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-2 flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0">
-              <div className="min-w-[80px] aspect-square bg-[var(--color-surface)] border border-[var(--color-border-main)] rounded-lg overflow-hidden cursor-pointer hover:ring-2 ring-[#FF3C38] transition-all duration-300">
-                <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsM_yWgDtkQcflsjHqyMrvoYiprCTR-3UQ2Gv3Fv9AvROylzvMbO8Qyi--MLczLU15DqPb6GxYYjlZUkAvKjp7qiWYYsm7aIAtncXttosBvRjYQWi6SzaygxSi3UEkdviyBI3raxYGJlVP4n8saGXwHkiuXpVd1zCx5cSbPA6YiFl7mB_euoJerHPDKibmLUPteXQf8r-hVQQTbSg3u0QMTvRWXgE-CCxEMdPckBQwmJ5f7rJo7u_rz9kSGGFZCATJJMTOdsVKDGwW" alt="Headstock" />
-              </div>
-              <div className="min-w-[80px] aspect-square bg-[var(--color-surface)] border border-[var(--color-border-main)] rounded-lg overflow-hidden cursor-pointer hover:ring-2 ring-[#FF3C38] transition-all duration-300">
-                <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz2xvaTeUi6_sRl-izgxqwd70SFR_FK6rnBgR9IyGfLURPVIsRkdoJddDxsgQ_wnyZaSMMl8aBTmOblfHI5UC_3NavBrg_a-zJBYUxm0TdfYqRGjAgcm-xWLGJgX6dwC7z1SRpjK0z1QA5L1M1HWkyLRMQUQRbJwb4VeNWlaQQBtkUVthGp76zdcKbB00JmonWEpqNo0NP27sY2RiocryL5SgG5x2jgv_U6a1cVWet20Rt_y8osZQIBn4a6PGE8cLMZQscooYbEhvg" alt="Pickups" />
-              </div>
-              <div className="min-w-[80px] aspect-square bg-[var(--color-surface)] border border-[var(--color-border-main)] rounded-lg overflow-hidden cursor-pointer hover:ring-2 ring-[#FF3C38] transition-all duration-300">
-                <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9BeIfnB7tnLoQH_ngugC9AQ2IVhh1iqzzCdXYCQ-tUCAxdCWJwjIVl-vnQuBFwuMOKQJ2sE5ZtB_LPUJ0soWsUf16SfPm11THWKxOmGu41Y5XfSl_UCFUA8XWkOJewupo4f9CmMbMqHIGD1J5XGAlNGuBZw0ZXI0lrQV173Ejrm3SHwYLul_ODSLmeD3ArX23sLgNYv95Mjjq8QbVH2wd4aS2ktlLTxiD0LbW688KoZux2GHaR0Dlk66pnGd04G5h9zcgAul2tSGv" alt="Fretboard" />
-              </div>
-            </div>
-            <div className="md:col-span-10">
-              <div className="aspect-[4/5] bg-gradient-to-b from-[#f2f2f2] to-[#dfdfdf] dark:from-[#202020] dark:to-[#121212] rounded-2xl border border-[var(--color-border-main)] overflow-hidden relative group flex items-center justify-center p-8">
-                <img className="w-[85%] h-[90%] object-contain transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSM__RQGuaFJP9vbILKuBheSAQyU-D8n-_Ym-maOxx6boouWJajz-GeF_aR5LzfoEgoQxVBdcDsY0JFo6ogXqjTvRXlzvEc0TrvZLASMhPDfLCwHek4tIG62dSwdyeYmtgWehum4Hgd2LJe2iHxGDBoaPh547u4c3VdBn0zMNe4a7mfYS5WNBKh9UeDc6kXzRGax8T0qeZ6mX_7VgzMjtyjE8pRspHO1hnCppz5WoxGSct0Qrhtrs9rxIVD9d4LjRdaT4yIIUsecRK" alt="Main Product" />
-              </div>
-            </div>
-          </div>
-
-          {/* Product Info Block */}
-          <div className="lg:col-span-5 flex flex-col gap-8 mt-10 lg:mt-0">
-            <div>
-              <span className="text-[#FF3C38] font-headline font-bold text-sm uppercase tracking-widest mb-4 block">Signature Series</span>
-              <h1 className="text-5xl md:text-6xl font-headline font-black text-[var(--color-text-main)] tracking-tighter leading-none mb-4">PULSE REVENANT v2</h1>
-              <div className="flex items-center gap-4">
-                <div className="flex text-[#FF7A00]">
-                  <Star size={18} fill="currentColor" />
-                  <Star size={18} fill="currentColor" />
-                  <Star size={18} fill="currentColor" />
-                  <Star size={18} fill="currentColor" />
-                  <Star size={18} className="text-[#FF7A00]" />
-                </div>
-                <span className="text-[var(--color-text-muted)] font-label text-sm uppercase tracking-wider">4.8 (124 Reviews)</span>
-              </div>
-            </div>
-
-            <div className="flex items-baseline gap-4">
-              <span className="text-5xl font-headline font-bold text-[var(--color-text-main)] tracking-tighter drop-shadow-[0_0_15px_rgba(255,60,56,0.3)]">$3,499</span>
-              <span className="text-[var(--color-text-muted)] line-through text-xl">$4,200</span>
-            </div>
-
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border-main)] p-6 rounded-2xl shadow-inner">
-              <p className="text-[var(--color-text-muted)] leading-relaxed mb-6">
-                Engineered for the stage, the Revenant v2 features an ultra-resonant roasted maple neck and active pulse-coil pickups. This is the weapon of choice for those who live for the low-end growl and crystalline highs.
-              </p>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 size={18} className="text-[#FF3C38]" />
-                  <span className="text-[var(--color-text-main)] text-sm">Limited Edition Ebony Finish</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 size={18} className="text-[#FF3C38]" />
-                  <span className="text-[var(--color-text-main)] text-sm">Custom Heart-Rhythm Flight Case Included</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <button className="w-full h-16 bg-gradient-to-r from-[#FF3C38] to-[#FF7A00] text-white font-headline font-black text-lg rounded-xl shadow-[0_0_40px_rgba(255,60,56,0.25)] hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 group border-none">
-                ADD TO STAGE
-                <ShoppingBag size={24} className="group-hover:scale-110 transition-transform" />
-              </button>
-              <button className="w-full h-16 bg-[var(--color-surface)] backdrop-blur-md text-[var(--color-text-main)] font-headline font-bold text-lg rounded-xl border border-[var(--color-border-main)] hover:bg-[var(--color-border-main)] transition-all duration-300">
-                REQUEST CUSTOM SHOP MODS
-              </button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-rose-50 dark:from-gray-950 dark:via-black dark:to-red-950">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        {/* Coming Soon Heading */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-full mb-4 animate-pulse">
+            <Bell className="w-4 h-4" />
+            <span className="text-sm font-semibold uppercase tracking-wider">Coming Soon</span>
           </div>
         </div>
 
-        {/* Specifications Bento Section */}
-        <section className="mt-32">
-          <h2 className="text-3xl font-headline font-bold text-[var(--color-text-main)] mb-12 tracking-tight">Technical Architecture</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border-main)] p-8 rounded-2xl flex flex-col justify-between h-48 hover:shadow-[0_0_20px_rgba(255,60,56,0.1)] hover:border-[#FF3C38]/50 transition-all duration-300 group">
-              <Zap size={32} className="text-[#FF3C38] group-hover:scale-110 transition-transform" />
-              <div>
-                <h3 className="text-[var(--color-text-muted)] font-label text-xs uppercase tracking-widest mb-1">Pickups</h3>
-                <p className="text-[var(--color-text-main)] font-bold text-lg">Active H-Rhythm X1</p>
-              </div>
-            </div>
+        {/* Main Product Section */}
+        <div className="rounded-2xl overflow-hidden">
+          
+          {/* Image Gallery Section */}
+          <div className="grid lg:grid-cols-2 gap-8 p-6 md:p-8">
             
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border-main)] p-8 rounded-2xl flex flex-col justify-between h-48 hover:shadow-[0_0_20px_rgba(255,60,56,0.1)] hover:border-[#FF3C38]/50 transition-all duration-300 group">
-              <Hand size={32} className="text-[#FF3C38] group-hover:scale-110 transition-transform" />
-              <div>
-                <h3 className="text-[var(--color-text-muted)] font-label text-xs uppercase tracking-widest mb-1">Fretboard</h3>
-                <p className="text-[var(--color-text-main)] font-bold text-lg">Macassar Ebony</p>
-              </div>
-            </div>
-            
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border-main)] p-8 rounded-2xl flex flex-col justify-between h-48 hover:shadow-[0_0_20px_rgba(255,60,56,0.1)] hover:border-[#FF3C38]/50 transition-all duration-300 group">
-              <Wrench size={32} className="text-[#FF3C38] group-hover:scale-110 transition-transform" />
-              <div>
-                <h3 className="text-[var(--color-text-muted)] font-label text-xs uppercase tracking-widest mb-1">Scale Length</h3>
-                <p className="text-[var(--color-text-main)] font-bold text-lg">25.5" Modern Pro</p>
-              </div>
-            </div>
-
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border-main)] p-8 rounded-2xl flex flex-col justify-between h-48 hover:shadow-[0_0_20px_rgba(255,60,56,0.1)] hover:border-[#FF3C38]/50 transition-all duration-300 group">
-              <Mountain size={32} className="text-[#FF3C38] group-hover:scale-110 transition-transform" />
-              <div>
-                <h3 className="text-[var(--color-text-muted)] font-label text-xs uppercase tracking-widest mb-1">Body Wood</h3>
-                <p className="text-[var(--color-text-main)] font-bold text-lg">Swamp Ash Solid</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Reviews Section */}
-        <section className="mt-32 glass-card p-8 md:p-12 rounded-3xl border border-[var(--color-border-main)] relative overflow-hidden bg-[var(--color-surface)]">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF3C38]/5 blur-[120px]"></div>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 relative z-10">
+            {/* Left Column - Large Image */}
             <div>
-              <h2 className="text-3xl md:text-4xl font-headline font-black text-[var(--color-text-main)] mb-2">PULSE REVIEWS</h2>
-              <p className="text-[var(--color-text-muted)]">Real experiences from touring artists and collectors.</p>
+              <div 
+                className="relative h-[400px] md:h-[500px] rounded-xl overflow-hidden bg-gradient-to-br from-red-100 to-rose-100 dark:from-red-950/30 dark:to-rose-950/30 mb-4 cursor-pointer group"
+                onClick={() => hasGallery && openImageModal(selectedImage, galleryImages.indexOf(selectedImage))}
+              >
+                {selectedImage ? (
+                  <img 
+                    src={selectedImage} 
+                    alt={product.title}
+                    className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="w-20 h-20 text-gray-400" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Eye className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              
+              {/* Small Gallery Thumbnails */}
+              {hasGallery && (
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {galleryImages.map((img, idx) => (
+                    <div 
+                      key={idx}
+                      className={`w-20 h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0 ${
+                        selectedImage === img ? 'border-red-500 shadow-lg' : 'border-gray-200 dark:border-gray-700 hover:border-red-300'
+                      }`}
+                      onClick={() => {
+                        setSelectedImage(img);
+                        setCurrentModalIndex(idx);
+                      }}
+                    >
+                      <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <button className="text-[#FF3C38] font-bold uppercase text-sm tracking-widest flex items-center gap-2 hover:gap-4 transition-all">
-              Write a Review <ArrowRight size={18} />
+
+            {/* Right Column - Product Info */}
+            <div>
+              {/* Title */}
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3">{product.title}</h1>
+              {product.subtitle && (
+                <p className="text-gray-500 dark:text-gray-400 mb-4">{product.subtitle}</p>
+              )}
+
+              {/* Category & Subcategory */}
+              <div className="flex flex-wrap gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
+                {product.category && (
+                  <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-sm font-medium flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    {product.category}
+                  </span>
+                )}
+                {product.subCategory && (
+                  <span className="px-3 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 rounded-full text-sm font-medium">
+                    {product.subCategory}
+                  </span>
+                )}
+              </div>
+
+              {/* Share Section */}
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Share:</span>
+                <button 
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className="text-sm text-green-500">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-red-500" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-red-500">Copy Link</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Coming Soon Card */}
+              <div className="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 rounded-xl p-6 mb-6 border border-red-200 dark:border-red-800/30">
+                <div className="text-center">
+                  <Clock className="w-12 h-12 text-red-600 dark:text-red-400 mx-auto mb-3 animate-pulse" />
+                  <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Coming Soon!</h3>
+                  
+                  {timeLeft && (
+                    <div className="mt-4">
+                      <div className="flex gap-2 md:gap-3 justify-center">
+                        <div className="text-center">
+                          <div className="bg-gradient-to-br from-red-600 to-rose-600 text-white rounded-lg px-2 py-2 min-w-[55px] md:min-w-[70px]">
+                            <span className="text-xl md:text-2xl font-bold">{String(timeLeft.days).padStart(2, '0')}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Days</p>
+                        </div>
+                        <div className="text-center">
+                          <div className="bg-gradient-to-br from-red-600 to-rose-600 text-white rounded-lg px-2 py-2 min-w-[55px] md:min-w-[70px]">
+                            <span className="text-xl md:text-2xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Hours</p>
+                        </div>
+                        <div className="text-center">
+                          <div className="bg-gradient-to-br from-red-600 to-rose-600 text-white rounded-lg px-2 py-2 min-w-[55px] md:min-w-[70px]">
+                            <span className="text-xl md:text-2xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Mins</p>
+                        </div>
+                        <div className="text-center">
+                          <div className="bg-gradient-to-br from-red-600 to-rose-600 text-white rounded-lg px-2 py-2 min-w-[55px] md:min-w-[70px]">
+                            <span className="text-xl md:text-2xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Secs</p>
+                        </div>
+                      </div>
+                      {product.scheduledAt && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                          Release Date: {new Date(product.scheduledAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {!timeLeft && product.scheduledAt && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                      This product will be available soon!
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Description & Features Section */}
+          <div className="grid lg:grid-cols-2 gap-8 border-t border-gray-200 dark:border-gray-800 p-6 md:p-8">
+            
+            <div>
+              {product.description && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-red-500" />
+                    Product Description
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+                    {product.description}
+                  </p>
+                </div>
+              )}
+
+              {product.features && product.features.length > 0 && (
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-red-500" />
+                    Key Features
+                  </h2>
+                  <div className="space-y-2">
+                    {product.features.map((feature, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <CheckCircle className="w-4 h-4 text-red-500" />
+                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {product.about && product.about.length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-red-500" />
+                  Specifications
+                </h2>
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl overflow-hidden">
+                  {product.about.map((item, idx) => (
+                    <div key={idx} className={`flex flex-col sm:flex-row py-3 px-4 ${idx !== product.about.length - 1 ? 'border-b border-gray-200 dark:border-gray-800' : ''}`}>
+                      <span className="sm:w-1/3 font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-0">{item.key}</span>
+                      <span className="sm:w-2/3 text-gray-600 dark:text-gray-400">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Brand Section */}
+          {product.sellerPanel && (
+            <div className="border-t border-gray-200 dark:border-gray-800 p-6 md:p-8">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-red-500" />
+                Brand Information
+              </h2>
+              <Link 
+                to={`/seller/brand/${product.sellerPanel.brandName}`}
+                className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group"
+              >
+                {product.sellerPanel.logo ? (
+                  <img 
+                    src={product.sellerPanel.logo} 
+                    alt={product.brand} 
+                    className="w-16 h-16 rounded-full object-cover border-2 border-red-200 dark:border-red-800 group-hover:border-red-500 transition-all"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center">
+                    <Tag className="w-8 h-8 text-white" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800 dark:text-white text-lg">{product.brand}</p>
+                  {product.sellerPanel.brandDescription && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{product.sellerPanel.brandDescription}</p>
+                  )}
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
+              </Link>
+            </div>
+          )}
+
+          {/* Product Gallery Section - Using gallery images */}
+          {hasGallery && galleryImages.length > 0 && (
+            <div className="border-t border-gray-200 dark:border-gray-800 p-6 md:p-8">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                <Eye className="w-5 h-5 text-red-500" />
+                Product Gallery
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {galleryImages.map((img, idx) => (
+                  <div 
+                    key={idx}
+                    className="relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 aspect-square"
+                    onClick={() => openImageModal(img, idx)}
+                  >
+                    <img 
+                      src={img} 
+                      alt={`Gallery ${idx + 1}`} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Eye className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Image Modal */}
+      {imageModalOpen && selectedImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md" onClick={closeImageModal}>
+          <div className="relative max-w-6xl w-full mx-4">
+            <button 
+              onClick={closeImageModal} 
+              className="absolute -top-12 right-0 text-white hover:text-red-400 transition-colors z-10"
+            >
+              <X className="w-8 h-8" />
             </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-            {/* Review 1 */}
-            <div className="bg-[var(--color-bg)] border border-[var(--color-border-main)] p-8 rounded-2xl">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full overflow-hidden border border-[var(--color-border-main)]">
-                  <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOcAiVeSxjcTZhHDxGh1Pi-RBod5CdomuqPV7D9IO7DlE7OaR94seFsFs-L-R9yzgOqmjdHuD0sBgUHHudevDHlJSjcGKseUA7wdvhssB3dpcs4yiDyE2iM6VBW_wRUK5Gal2qZui0ARqTYQ-CzDzeIgos08t_7hiRakeXVmvBQs70j0OruMEZeG9P3BLHQF7qadsbkcy7D5UFhGrR7c-U97pO1wRloI71-q-rFo3S_PwHHItZw6s6geghA-cp9eb-eGqcMdaqU9Zr" alt="Reviewer" />
-                </div>
-                <div>
-                  <p className="text-[var(--color-text-main)] font-bold">Kaelen Vance</p>
-                  <p className="text-[var(--color-text-muted)] text-xs uppercase tracking-wider">Verified Artist</p>
-                </div>
-              </div>
-              <div className="flex text-[#FF7A00] mb-4">
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-              </div>
-              <p className="text-[var(--color-text-main)] italic leading-relaxed font-light">
-                "The Revenant v2 cuts through the mix like nothing else I've played. The sustain on the low strings is haunting. It's not just a guitar; it's an extension of the soul."
-              </p>
+            
+            {currentModalIndex > 0 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors z-10"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+            
+            {currentModalIndex < galleryImages.length - 1 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors z-10"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+            
+            <div className="absolute -top-12 left-0 bg-black/50 text-white px-3 py-1 rounded-lg text-sm">
+              {currentModalIndex + 1} / {galleryImages.length}
             </div>
-
-            {/* Review 2 */}
-            <div className="bg-[var(--color-bg)] border border-[var(--color-border-main)] p-8 rounded-2xl">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full overflow-hidden border border-[var(--color-border-main)]">
-                  <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvqW4E03UBWBYcCeHyxbmkajPrF_8ouY7d8wBzE-q8ztBJ2BZzkUdII0c1Z7Lz9RUeU5yzYdymIebfqiYuuhvYIv2v5qmlmB-rR8ObTxvmquq-IfzTagz-qweVy_cbwDkpQwh74Ewh0wfz-NE-dHCKwqd-Pfka6GTGktKnpcYKpait2JJC99D0lelcpDhCGsfH1mY59ICkpmpMXrPxD2nuzX7lKrfUBQNzu7x30FGw6ZzDySyM-hTkKwN3uREM7WjxeTM6cd_Et5Cn" alt="Reviewer" />
-                </div>
-                <div>
-                  <p className="text-[var(--color-text-main)] font-bold">Sarah Vox</p>
-                  <p className="text-[var(--color-text-muted)] text-xs uppercase tracking-wider">Sound Designer</p>
-                </div>
-              </div>
-              <div className="flex text-[#FF7A00] mb-4">
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-                <Star size={14} fill="currentColor" />
-              </div>
-              <p className="text-[var(--color-text-main)] italic leading-relaxed font-light">
-                "Build quality is flawless. The neck profile is incredibly fast. I've used it for every session this month. Simply the most versatile high-gain machine I own."
-              </p>
-            </div>
+            
+            <img 
+              src={selectedImage} 
+              alt="Full screen" 
+              className="w-full max-h-[85vh] object-contain rounded-2xl" 
+              onClick={(e) => e.stopPropagation()} 
+            />
           </div>
-        </section>
-
-      </main>
+        </div>
+      )}
     </div>
   );
 };

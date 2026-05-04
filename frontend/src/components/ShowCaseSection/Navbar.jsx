@@ -32,7 +32,7 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Close mobile menu on window resize
+  // Close mobile menu
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -50,7 +50,7 @@ function Navbar() {
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : -100 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-15 bg-transparent backdrop-blur  transition-colors duration-300"
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-15 bg-white/10 backdrop-blur  transition-colors duration-300"
       >
         {/* Logo - Left Side */}
         <Link 
@@ -62,7 +62,7 @@ function Navbar() {
 
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center gap-8 lg:gap-10 bg-white/10 backdrop-blur shadow-sm rounded-2xl p-3">
-          {['SHOP', 'ABOUT', 'BLOGS', 'CONTACT'].map((item) => (
+          {['SHOP', 'ABOUT', 'SELLERS', 'CONTACT'].map((item) => (
             <Link
               key={item}
               to={`/${item.toLowerCase()}`}
@@ -103,7 +103,7 @@ function Navbar() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsSearchOpen(!isSearchOpen)} 
-              className="text-neutral-800 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="text-gray-500 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               <Search size={20} className='cursor-pointer' />
             </motion.button>
@@ -116,7 +116,7 @@ function Navbar() {
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="text-neutral-800 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="text-gray-500 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               <ShoppingCart size={20} />
               <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-400 text-white text-[10px] h-4 w-4 flex items-center justify-center rounded-full font-bold shadow-md">
@@ -130,7 +130,7 @@ function Navbar() {
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="text-neutral-800 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="text-gray-500 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               <User size={20} />
             </motion.div>
@@ -160,7 +160,7 @@ function Navbar() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className="text-neutral-800 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="text-gray-500 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             <Menu size={22} />
           </motion.button>

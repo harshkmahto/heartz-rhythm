@@ -315,6 +315,17 @@ export const updatePersonalDetails = async (data, userId) => {
   }
 };
 
+// UPDATE STATUS - Update seller status
+export const updateStatus = async (data, userId) => {
+  try {
+    const response = await api.patch(`/user/seller/pannel-update/status/${userId}`, data);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Status update failed' };
+  }
+};
+
+
 // GET SELLER PANEL - Get seller panel data 
 export const getMySellerPannel = async () => {
   try {
@@ -345,3 +356,26 @@ export const getSellerPanelById = async (panelId) => {
       throw error.response?.data || { message: 'Failed to fetch single seller brand' };
     }
     }
+
+// GET SELLER FOR ADMIN
+export const getSellerForAdmin = async () => {
+  try {
+    const response = await api.get(`/user/seller/pannel`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch seller for admin' };
+  }
+
+  }
+
+// GET SINGLE SELLER FOR ADMIN
+export const getSellerByIdForAdmin = async (panelId) => {
+  try {
+    const response = await api.get(`/user/seller/pannel/${panelId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch single seller for admin' };
+  }
+
+  
+  }

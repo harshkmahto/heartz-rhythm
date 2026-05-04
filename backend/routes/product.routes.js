@@ -1,7 +1,7 @@
 import {Router} from 'express'
 
 
-import { blockProduct, createProduct, createProductReport, deleteProduct, getAllProducts, getAllPublicProducts, getAllReports, getMyProducts, getProductById, getProductStatistics, getReportById, getReportedProductsForSeller, getReportStatistics, getSingleProductForAdmin, getSinglePublicProduct, sellerRespondToReport, takeActionOnReport, updateProduct, updateProductStatus, updateReport, updateReportStatus } from '../controller/product.controller.js';
+import { blockProduct, createProduct, createProductReport, deleteProduct, getAllProducts, getAllPublicProducts, getAllReports, getComingSoon, getComingSoonDetails, getMyProducts, getProductById, getProductStatistics, getReportById, getReportedProductsForSeller, getReportStatistics, getSingleProductForAdmin, getSinglePublicProduct, sellerRespondToReport, takeActionOnReport, updateProduct, updateProductStatus, updateReport, updateReportStatus } from '../controller/product.controller.js';
 
 
 
@@ -10,6 +10,7 @@ import { authorized, isAdmin, isSeller, protect } from '../middleware/auth.middl
 import { uploadProductImages } from '../middleware/upload.middleware.js';
 import { addToWishlist, checkInWishlist, clearWishlist, getWishlist, getWishlistCount, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { applyPriceRules, createPriceRule, deletePriceRule, getAllPriceRules, getPriceRuleOptions, updatePriceRule } from '../controller/priceRule.controller.js';
+import { addToCart, changeVariant, clearCart, getAvailableVariants, getCart, getCartCount, removeFromCart, updateCartQuantity } from '../controller/cart.controller.js';
 
 
 
@@ -43,8 +44,8 @@ productRoute.patch('/admin/block-product/:productId', authorized, isAdmin, block
 //-----------PUBLIC----------
 productRoute.get('/public/products', getAllPublicProducts)
 productRoute.get('/public/products/:productId', getSinglePublicProduct)
-
-
+productRoute.get('/public/comingsoon', getComingSoon)
+productRoute.get('/public/comingsoon/:productId', getComingSoonDetails)
 
 //-----------------------------------------WISHLIST------------------------------------
 
@@ -55,6 +56,22 @@ productRoute.delete('/wishlist/clear/all', authorized, clearWishlist)
 productRoute.get('/wishlist/count', authorized, getWishlistCount)
 productRoute.get('/wishlist', authorized, getWishlist)
 productRoute.get('/wishlist/check/:productId', authorized, checkInWishlist )
+
+//----------------------------------------CART-------------------------------------------
+
+productRoute.post('/cart/add', authorized, addToCart)
+productRoute.patch('/cart/update/:cartItemId', authorized, updateCartQuantity)
+productRoute.patch('/cart/change-variant/:cartItemId', authorized, protect, changeVariant)
+
+productRoute.get('/cart', authorized, getCart)
+productRoute.get('/cart/count', authorized, getCartCount)
+productRoute.get('/cart/variants/:productId', authorized, getAvailableVariants)
+
+productRoute.delete('/cart/remove/:cartItemId', authorized, removeFromCart)
+productRoute.delete('/cart/clear/all', authorized, clearCart)
+
+
+
 
 //----------------------------------------------PRICING RULES-----------------------------------
 productRoute.post('/price/create', authorized, isAdmin, createPriceRule)
@@ -67,6 +84,8 @@ productRoute.get('/price/get-all', authorized, isAdmin, getAllPriceRules)
 productRoute.post('/price/apply', authorized, isAdmin, applyPriceRules)
 
 productRoute.get('/price/options', authorized, isAdmin, getPriceRuleOptions)
+
+
 
 
 //---------------------------------------REPORTS----------------------------------------

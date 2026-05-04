@@ -1,17 +1,33 @@
 import React from 'react'
 import Category from '../components/ShowCaseSection/Category'
-import BannerSection from '../components/ShowCaseSection/BannerSection'
 import MusicHeroSection from '../components/ShowCaseSection/MusicHeroSection'
-import BrandsHero from '../components/ShowCaseSection/BrandsHero'
+import ProductsGrid from '../components/ShowCaseSection/ProductsGrid'
+import Banner from '../components/ShowCaseSection/Banner'
+import ComingSoonProducts from '../components/ShowCaseSection/ComingSoonProducts'
+import FeaturedProducts from '../components/ShowCaseSection/FeatuedProducts'
+import AboutSection from '../components/ShowCaseSection/AboutSection'
+import FAQ from '../components/ShowCaseSection/FQA'
+import Brands from '../components/ShowCaseSection/Brands'
+import DiscountProducts from '../components/ShowCaseSection/DiscountProducts'
+import RoleButtonHero from '../components/ShowCaseSection/RoleButtonHero'
 
 const Home = () => {
   return (
-    <div>
+    <div className='min-h-screen'>
       <Category />
      
-      <BannerSection />
+      <Banner/>
+      <ComingSoonProducts/>
+      <ProductsGrid />
+      <RoleButtonHero/>
       <MusicHeroSection />
-      {/* <BrandsHero /> */}
+   
+      <FeaturedProducts/>
+      <DiscountProducts/>
+      <Brands/>
+      <AboutSection/>
+      <FAQ/>
+   
     </div>
   )
 }

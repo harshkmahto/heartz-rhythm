@@ -6,20 +6,23 @@ import {
   Sparkles, Zap, ChevronRight, Music, Volume2, Guitar,
   Monitor, Smartphone, Edit3, Eye, Building2, Tag, CalendarDays,
   Store, User, FileText, Banknote, MapPinned, Package,
-  ImageIcon
+  ImageIcon, Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import UpdateSellerPannel from '../../components/Seller/UpdateSellerBasicDetails';
 import { useSeller } from '../../context/SellerContext'; 
 import Loader from '../../components/ShowCaseSection/Loader';
+import { updateStatus } from '../../utils/apiRequest';
+import { useAuth } from '../../context/AuthContext';
 
 const SellerBrandPanel = () => {
   const [updatePopup, setupdatePopup] = useState(false);
-
-  const [imageModel, setImageModel] = useState(false)
+  const [imageModel, setImageModel] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-
-  const { seller, loading, error, isSellerExists } = useSeller();
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  
+  const { seller, loading, error, isSellerExists, refreshSeller } = useSeller();
+  const { user } = useAuth();
 
   const handleUpdate = () => {
     setupdatePopup(true);
@@ -27,14 +30,42 @@ const SellerBrandPanel = () => {
 
   const handleUpdateClose = () => {
     setupdatePopup(false);
+    refreshSeller(); // Refresh seller data after update
   };
-
 
   const handleImageModel = (img) => {
     setSelectedImage(img);
     setImageModel(true);
   };
 
+  // Handle status toggle
+  const handleStatusToggle = async () => {
+    if (!seller) return;
+    
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      alert('User ID not found');
+      return;
+    }
+
+    const newStatus = seller.status === 'active' ? 'inactive' : 'active';
+    
+    setUpdatingStatus(true);
+    try {
+      const response = await updateStatus({ status: newStatus }, userId);
+      if (response.success) {
+        await refreshSeller(); // Refresh seller data from context
+        alert(`Store status updated to ${newStatus}`);
+      } else {
+        alert(response.message || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert(error.message || 'Failed to update status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
  
   if (loading) {
     return (
@@ -47,7 +78,6 @@ const SellerBrandPanel = () => {
     );
   }
 
-  
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-100 via-white to-green-100">
@@ -65,7 +95,6 @@ const SellerBrandPanel = () => {
       </div>
     );
   }
-
 
   if (!isSellerExists) {
     return (
@@ -95,8 +124,7 @@ const SellerBrandPanel = () => {
             <img
               src={seller.coverImage}
               alt={`${seller.brandName || 'Brand'} Cover`}
-              className="w-full h-full object-cover "
-             
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-r from-emerald-600 to-green-700 flex items-center justify-center">
@@ -130,7 +158,7 @@ const SellerBrandPanel = () => {
                     <img
                       src={seller.logo}
                       alt={`${seller.brandName || 'Brand'} Logo`}
-                      className="w-full h-full object-cover "
+                      className="w-full h-full object-cover cursor-pointer"
                       onClick={() => handleImageModel(seller.logo)}
                     />
                   ) : (
@@ -141,57 +169,118 @@ const SellerBrandPanel = () => {
                 </div>
               </div>
 
-              
-
               {/* Brand Info */}
               <div className="flex-1 text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
                   <h1 className="uppercase text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-500 bg-clip-text text-transparent dark:from-emerald-400 dark:via-emerald-300 dark:to-emerald-200">
                     {seller.brandName || "BRAND NAME"}
                   </h1>
-                 
                 </div>
 
                 {/* Brand Speciality */}
-              {seller.brandSpeciality && (
-                <div className="bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/30 p-4 rounded-xl mb-6 border-l-4 border-emerald-500 mt-2">
-                  <p className="text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-2">
-                    <Sparkles className="w-5 h-5" /> {seller.brandSpeciality}
-                  </p>
-                </div>
-              )}
-               {seller.brandSince && (
-                    <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-full">
-                      SINCE {new Date (seller.brandSince).getFullYear()}
-                    </span>
-                  )}
-               
-                {seller.brandCategory && (
-                  <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
-                    <Tag className="w-4 h-4 text-emerald-500" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{seller.brandCategory}</span>
-                    {seller.brandSubCategory && (
-                      <span className="text-sm text-gray-500 dark:text-gray-500">• {seller.brandSubCategory}</span>
-                    )}
+                {seller.brandSpeciality && (
+                  <div className="bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/30 p-4 rounded-xl mb-4 border-l-4 border-emerald-500 mt-2">
+                    <p className="text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-2">
+                      <Sparkles className="w-5 h-5" /> {seller.brandSpeciality}
+                    </p>
                   </div>
                 )}
+                
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
+                  {seller.brandSince && (
+                    <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-full">
+                      SINCE {new Date(seller.brandSince).getFullYear()}
+                    </span>
+                  )}
+                  
+                  {seller.brandCategory && (
+                    <div className="flex items-center gap-1">
+                      <Tag className="w-3 h-3 text-emerald-500" />
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{seller.brandCategory}</span>
+                      {seller.brandSubCategory && (
+                        <span className="text-xs text-gray-500 dark:text-gray-500">• {seller.brandSubCategory}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}
-              <div className='flex gap-3'>
-                <button 
-                  onClick={handleUpdate}
-                  className='group flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-5 py-2.5 rounded-xl transition-all duration-300 active:scale-95 shadow-lg hover:shadow-xl cursor-pointer'
-                >
-                  <Edit3 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                  <span className="font-semibold">Update</span>
-                </button>
-                <Link to='/seller/seller-details'>
-                  <button className='group flex items-center gap-2 bg-white dark:bg-gray-800 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-5 py-2.5 rounded-xl transition-all duration-300 active:scale-95 shadow-lg hover:shadow-xl cursor-pointer'>
-                    <Eye className="w-4 h-4" />
-                    <span className="font-semibold ">View Profile</span>
+              <div className="flex flex-col items-end gap-3">
+                <div className='flex gap-3'>
+                  <button 
+                    onClick={handleUpdate}
+                    className='group flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-5 py-2.5 rounded-xl transition-all duration-300 active:scale-95 shadow-lg hover:shadow-xl cursor-pointer'
+                  >
+                    <Edit3 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                    <span className="font-semibold">Update</span>
                   </button>
-                </Link>
+                  <Link to='/seller/seller-details'>
+                    <button className='group flex items-center gap-2 bg-white dark:bg-gray-800 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-5 py-2.5 rounded-xl transition-all duration-300 active:scale-95 shadow-lg hover:shadow-xl cursor-pointer'>
+                      <Eye className="w-4 h-4" />
+                      <span className="font-semibold">View Profile</span>
+                    </button>
+                  </Link>
+                </div>
+
+                {/* Status Section with Toggle */}
+                <div className="mt-4 flex flex-col items-end">
+                  {/* Status Indicator */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${
+                      seller.status === 'active' 
+                        ? 'bg-green-500 animate-pulse' 
+                        : seller.status === 'inactive' 
+                        ? 'bg-red-500' 
+                        : 'bg-yellow-500'
+                    }`}></div>
+                    <span className={`text-xs font-semibold uppercase ${
+                      seller.status === 'active' 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : seller.status === 'inactive' 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-yellow-600 dark:text-yellow-400'
+                    }`}>
+                      {seller.status}
+                    </span>
+                  </div>
+                  
+                  {/* Toggle Switch - Only show for non-pending status */}
+                  {seller.status !== 'pending' && (
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs ${seller.status === 'inactive' ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-400'}`}>
+                        Inactive
+                      </span>
+                      <button
+                        onClick={handleStatusToggle}
+                        disabled={updatingStatus}
+                        className={`w-14 h-7 flex items-center rounded-full p-1 transition-all duration-300 cursor-pointer
+                          ${seller.status === 'active' ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}
+                          ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}
+                        `}
+                      >
+                        {updatingStatus ? (
+                          <Loader2 className="w-4 h-4 text-white animate-spin mx-auto" />
+                        ) : (
+                          <div
+                            className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-all duration-300
+                              ${seller.status === 'active' ? "translate-x-7" : "translate-x-0"}`}
+                          />
+                        )}
+                      </button>
+                      <span className={`text-xs ${seller.status === 'active' ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
+                        Active
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Pending message */}
+                  {seller.status === 'pending' && (
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 text-right">
+                      Pending approval. Please wait for admin review.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -212,19 +301,18 @@ const SellerBrandPanel = () => {
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-white">About {seller.brandName || 'the Brand'}</h2>
               </div>
               
-               {seller.brandDescription && (
-                  <p className="text-black dark:text-white font-semibold flex gap-2 items-center m-2">
-                    <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full "></span>
-                    {seller.brandDescription}
-                  </p>
-                )}
+              {seller.brandDescription && (
+                <p className="text-black dark:text-white font-semibold flex gap-2 items-center m-2">
+                  <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full"></span>
+                  {seller.brandDescription}
+                </p>
+              )}
               
               {/* Brand Features */}
-              {seller.brandFeatures &&  (
+              {seller.brandFeatures && seller.brandFeatures.length > 0 && (
                 <div className="mb-4 mt-2">
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Key Features:</h3>
                   <div className="flex flex-wrap gap-2">
-                    
                     {seller.brandFeatures.map((feature, idx) => (
                       <span key={idx} className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-sm rounded-full">
                         {feature}
@@ -249,7 +337,7 @@ const SellerBrandPanel = () => {
                     <CalendarDays className="w-5 h-5 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Established</p>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{new Date(seller.brandSince).toLocaleDateString('en-US',{year:'numeric', month:'short', day:'numeric'} )}</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{new Date(seller.brandSince).toLocaleDateString('en-US',{year:'numeric', month:'short', day:'numeric'})}</p>
                     </div>
                   </div>
                 )}
@@ -311,17 +399,15 @@ const SellerBrandPanel = () => {
                   <div className="flex items-start gap-3">
                     <User className="w-5 h-5 text-emerald-500 mt-0.5" />
                     <div>
-                       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Seller Name</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Seller Name</p>
                       <p className="text-sm text-gray-800 dark:text-gray-200">{seller.sellerName}</p>
                     </div>
-                    </div>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </div>
-
-      
 
         {/* Preview Images Section */}
         {seller.previewImage && seller.previewImage.length > 0 && (
@@ -339,7 +425,7 @@ const SellerBrandPanel = () => {
                     <img 
                       src={image} 
                       alt={`Preview ${idx + 1}`} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 cursor-pointer"
                       onClick={() => handleImageModel(image)}
                     />
                   </div>
@@ -350,21 +436,18 @@ const SellerBrandPanel = () => {
         )}
 
         {/* Image Popup */}
-
-      { imageModel && selectedImage && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
-          onClick={() => {
-            setImageModel(false);
-            setSelectedImage(null);
-          }}
-        >
+        {imageModel && selectedImage && (
           <div 
-            className="relative max-w-4xl w-full p-4"
-            onClick={(e) => e.stopPropagation()} 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
+            onClick={() => {
+              setImageModel(false);
+              setSelectedImage(null);
+            }}
           >
-     
-              {/* Image */}
+            <div 
+              className="relative max-w-4xl w-full p-4"
+              onClick={(e) => e.stopPropagation()} 
+            >
               <img
                 src={selectedImage}
                 alt="Preview"
@@ -373,7 +456,6 @@ const SellerBrandPanel = () => {
             </div>
           </div>
         )}
-              
 
         {/* Update Popup */}
         {updatePopup && (
@@ -387,7 +469,5 @@ const SellerBrandPanel = () => {
     </div>
   );
 };
-
-
 
 export default SellerBrandPanel;

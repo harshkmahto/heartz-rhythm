@@ -98,7 +98,7 @@ export const deletePriceRule = async (req, res) => {
     }
 };
 
-// APPLY PRICE RULES TO PRODUCTS (called when product is fetched or via cron job)
+// APPLY PRICE RULES TO PRODUCTS
 export const applyPriceRules = async (req, res) => {
     try {
         // Get all active rules
@@ -134,7 +134,7 @@ export const applyPriceRules = async (req, res) => {
                 filter._id = { $in: rule.targetIds };
             }
             
-        
+            // Apply additional filters
             if (rule.filters?.hasReplacement !== undefined) {
                 filter['replacement.isAvailable'] = rule.filters.hasReplacement;
             }
@@ -156,29 +156,27 @@ export const applyPriceRules = async (req, res) => {
                 let hasChange = false;
                 
                 for (const variant of product.variants) {
-                    let oldFinalPrice = variant.finalPrice;
-
-                    if(!oldFinalPrice && oldFinalPrice !== 0){
-                        oldFinalPrice = variant.basePrice;
-                    }
-
-
-                    let newFinalPrice = oldFinalPrice;
+                    // FIXED: Use basePrice as the source price for calculation
+                    // Because finalPrice might be from previous rules
+                    const sourcePrice = variant.basePrice;  // Always use basePrice as source
+                    let newFinalPrice = sourcePrice;
                     
                     if (rule.adjustmentType === 'percentage') {
                         const percent = rule.operator === 'increase' 
                             ? (1 + rule.value / 100) 
                             : (1 - rule.value / 100);
-                        newFinalPrice = oldFinalPrice * percent;
-                    } else { 
+                        newFinalPrice = sourcePrice * percent;
+                    } else { // fixed amount
                         newFinalPrice = rule.operator === 'increase' 
-                            ? oldFinalPrice + rule.value 
-                            : oldFinalPrice - rule.value;
+                            ? sourcePrice + rule.value 
+                            : sourcePrice - rule.value;
                     }
                     
+                    // Round and ensure not negative
                     newFinalPrice = Math.round(Math.max(0, newFinalPrice));
                     
-                    if (oldFinalPrice !== newFinalPrice) {
+                    // Check if price changed
+                    if (variant.finalPrice !== newFinalPrice) {
                         variant.finalPrice = newFinalPrice;
                         hasChange = true;
                     }
@@ -207,6 +205,7 @@ export const applyPriceRules = async (req, res) => {
         });
         
     } catch (error) {
+        console.error('Apply price rules error:', error);
         return res.status(500).json({
             success: false,
             message: error.message

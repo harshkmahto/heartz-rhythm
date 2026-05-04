@@ -14,7 +14,7 @@ const ShopProductCard = ({ product, index }) => {
 
   const firstVariant = product.variants?.[0] || {};
   const mrp = firstVariant.mrp || product.mrp || 0;
-  const finalPrice = firstVariant.price || product.price || 0;
+  const finalPrice = firstVariant.finalPrice || product.finalPrice || 0;
   
  
   const averageRating = (() => {

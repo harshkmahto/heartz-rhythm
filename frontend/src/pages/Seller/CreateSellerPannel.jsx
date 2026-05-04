@@ -17,6 +17,13 @@ const CreateSellerPannel = () => {
   const { isSellerExists } = useSeller();
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
+  const [statusEnable, setStatusEnable] = useState(false);
+  const [newFeature, setNewFeature] = useState('');
+  const [featuresList, setFeaturesList] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  
   const [formData, setFormData] = useState({
     // Basic Info (Public)
     brandName: '',
@@ -26,14 +33,12 @@ const CreateSellerPannel = () => {
     brandPhone: '',
     brandEmail: '',
     brandSpeciality: '',
-    brandFeatures: [],
     brandSince: '',
     companyLocation: '',
     companyAddress: '',
     sellerName: '',
     
     // Personal Info (Private)
-    
     sellerEmail: '',
     sellerPhone: '',
     gstNumber: '',
@@ -52,12 +57,10 @@ const CreateSellerPannel = () => {
     logo: null,
     previewImages: []
   });
-  
-  const [newFeature, setNewFeature] = useState('');
-  const [featuresList, setFeaturesList] = useState([]);
-  const [previewUrls, setPreviewUrls] = useState([]);
-  const [coverPreview, setCoverPreview] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
+
+  const statusToggle = () => {
+    setStatusEnable(!statusEnable);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -69,7 +72,6 @@ const CreateSellerPannel = () => {
     if (file) {
       setFormData(prev => ({ ...prev, [type]: file }));
       
-      // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       if (type === 'coverImage') {
         setCoverPreview(previewUrl);
@@ -85,8 +87,6 @@ const CreateSellerPannel = () => {
     const selectedFiles = files.slice(0, maxFiles);
     
     setFormData(prev => ({ ...prev, previewImages: selectedFiles }));
-    
-    // Create preview URLs
     const urls = selectedFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(urls);
   };
@@ -95,7 +95,6 @@ const CreateSellerPannel = () => {
     if (newFeature.trim()) {
       const updatedFeatures = [...featuresList, newFeature.trim()];
       setFeaturesList(updatedFeatures);
-      setFormData(prev => ({ ...prev, brandFeatures: updatedFeatures }));
       setNewFeature('');
     }
   };
@@ -103,7 +102,6 @@ const CreateSellerPannel = () => {
   const handleRemoveFeature = (index) => {
     const updatedFeatures = featuresList.filter((_, i) => i !== index);
     setFeaturesList(updatedFeatures);
-    setFormData(prev => ({ ...prev, brandFeatures: updatedFeatures }));
   };
 
   const handleSubmit = async (e) => {
@@ -118,26 +116,27 @@ const CreateSellerPannel = () => {
       
       const submitData = new FormData();
       
-      // Append basic fields
+      // Append all form fields
       Object.keys(formData).forEach(key => {
-        if (key === 'brandFeatures') {
-          submitData.append(key, JSON.stringify(featuresList));
-             featuresList.forEach((feature, index) => {
-          submitData.append(`brandFeatures[${index}]`, feature);
-        });
-      } 
-         else if (key === 'previewImages') {
-          formData.previewImages.forEach((file, index) => {
-            submitData.append(`previewImage`, file);
+        if (key === 'previewImages') {
+          formData.previewImages.forEach((file) => {
+            submitData.append('previewImage', file);
           });
         } else if (key === 'coverImage' && formData.coverImage) {
           submitData.append('coverImage', formData.coverImage);
         } else if (key === 'logo' && formData.logo) {
           submitData.append('logo', formData.logo);
-        } else if (typeof formData[key] !== 'object') {
+        } else if (typeof formData[key] !== 'object' && formData[key] !== null && formData[key] !== '') {
           submitData.append(key, formData[key]);
         }
       });
+      
+      // ✅ Add brandFeatures as JSON string (this is the fix)
+      if (featuresList.length > 0) {
+        submitData.append('brandFeatures', JSON.stringify(featuresList));
+      }
+      
+      submitData.append('status', statusEnable ? 'active' : 'inactive');
       
       const response = await createSellerPannel(submitData, userId);
       
@@ -154,6 +153,7 @@ const CreateSellerPannel = () => {
       setLoading(false);
     }
   };
+  
 
   const sections = [
     { id: 'basic', name: 'Basic Information', icon: Globe, color: 'emerald', badge: 'Public' },
@@ -287,7 +287,7 @@ const CreateSellerPannel = () => {
                       value={formData.brandCategory}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 bg-white/50 dark:bg-black border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:text-white transition-all"
-                      placeholder="e.g., Electronics, Fashion"
+                      placeholder="e.g.,instruments, Guitar, Ukulele"
                     />
                   </div>
                   <div>
@@ -300,7 +300,7 @@ const CreateSellerPannel = () => {
                       value={formData.brandSubCategory}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 bg-white/50 dark:bg-black border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:text-white transition-all"
-                      placeholder="e.g., Smartphones, Men's Clothing"
+                      placeholder="e.g., Acoustic, Electric"
                     />
                   </div>
                 </div>
@@ -374,7 +374,7 @@ const CreateSellerPannel = () => {
                     onChange={(e) => setNewFeature(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddFeature()}
                     className="flex-1 px-4 py-3 bg-white/50 dark:bg-black border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:text-white transition-all"
-                    placeholder="Add a feature (e.g., Free Shipping)"
+                    placeholder="Add a feature (e.g., Free Shipping, Royal Instruments)"
                   />
                   <button
                     type="button"
@@ -468,6 +468,27 @@ const CreateSellerPannel = () => {
                       placeholder="Your full name"
                     />
                   </div>
+
+                  {/* Status */}
+               <div className='flex items-center justify-end gap-4'>
+                <label className="block text-lg font-semibold text-gray-700 dark:text-gray-300 ">Status:
+                   <span className={`ml-2 ${statusEnable ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {statusEnable ? 'Active' : 'Inactive'}
+                </span>
+                </label>
+                  <button 
+                    type="button"
+                    onClick={statusToggle}
+                    className={`w-16 h-8 flex items-center rounded-full p-1 transition-all duration-300 
+                      ${statusEnable ? "bg-emerald-500" : "bg-gray-300"}`}
+                  >
+                    <div
+                      className={`bg-white w-6 h-6 rounded-full shadow-md  transform transition-all duration-300 cursor-pointer 
+                        ${statusEnable ? "translate-x-8" : "translate-x-0"}`}
+                    />
+
+                  </button>
+              </div>   
             </div>
           )}
 

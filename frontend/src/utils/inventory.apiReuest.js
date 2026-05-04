@@ -1,4 +1,3 @@
-import { error } from 'three';
 import api from './axios'
 
 

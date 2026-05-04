@@ -1867,4 +1867,93 @@ export const getSinglePublicProduct = async (req, res) => {
     }
 };
 
+export const getComingSoon = async (req, res) => {
+    try {
+        let filter = {
+            isComingSoon: true,
+            status: { $in: ['draft', 'scheduled'] },
+            isBlocked: false
+        };
 
+       
+        const products = await ProductModel.find(filter)
+            .select('title subtitle thumbnail discount category subcategory brand isComingSoon scheduledAt')
+            .populate('sellerPanel', 'brandName logo sellerName')
+            .sort({ scheduledAt: 1, createdAt: -1 }) 
+            .lean();
+
+        
+        const productsWithReleaseInfo = products.map(product => {
+            let daysRemaining = null;
+            if (product.scheduledAt) {
+                const now = new Date();
+                const scheduledDate = new Date(product.scheduledAt);
+                if (scheduledDate > now) {
+                    const diffTime = Math.abs(scheduledDate - now);
+                    daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                }
+            }
+            
+            return {
+                ...product,
+                releaseInfo: {
+                    daysRemaining,
+                    releaseDate: product.scheduledAt || null
+                }
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Coming soon products fetched successfully",
+            data: {
+                products: productsWithReleaseInfo,
+                count: productsWithReleaseInfo.length
+            }
+        });    
+    } catch (error) {
+        console.error('Error in getComingSoon:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+// GET COMING SOON DETAILS
+export const getComingSoonDetails = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        
+        const product = await ProductModel.findOne({ 
+            _id: productId, 
+            isComingSoon: true,
+            isBlocked: false 
+        })
+        .select('title subtitle description features about showCase thumbnail images gallery preview videos variants discount totalStock category subCategory brand isComingSoon scheduledAt replacement return seo')
+        .populate('sellerPanel', 'brandName coverImage logo sellerName brandDescription brandCategory brandSubCategory companyLocation brandSince brandSpeciality')
+        .lean();
+        
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Coming soon product not found"
+            });
+        }
+        
+        return res.status(200).json({
+            success: true,
+            message: "Coming soon product fetched successfully",
+            data: product
+        });
+        
+    } catch (error) {
+        console.error('Error in getComingSoonDetails:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+ 

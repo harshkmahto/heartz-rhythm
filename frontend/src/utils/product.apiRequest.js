@@ -146,6 +146,23 @@ export const getSinglePublicProduct = async (productId) => {
     }
 }
 
+export const getComingSoon = async () => {
+    try {
+        const response = await api.get('/product/public/comingsoon');
+        return response.data;
+    } catch(error){
+        throw error.response?.data || { message: 'Failed to fetch coming soon products' };
+    }
+    }
+
+export const getComingSoonDetails = async (productId) => {
+    try {
+        const response = await api.get(`/product/public/comingsoon/${productId}`);
+        return response.data;
+    } catch(error){
+        throw error.response?.data || { message: 'Failed to fetch coming soon product details' };
+    }
+    }  
 
 //-----------------WISHLIST----------------
 export const addToWishlist = async (productId) => {
@@ -203,6 +220,98 @@ export const getWishlist = async () => {
     }
 
     }
+
+
+//----------------------------------------CART-------------------------------------------
+
+// Get user's cart
+export const getCart = async () => {
+    try {
+        const response = await api.get('/product/cart');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch cart' };
+    }
+};
+
+// Get cart count (for navbar badge)
+export const getCartCount = async () => {
+    try {
+        const response = await api.get('/product/cart/count');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch cart count' };
+    }
+};
+
+// Get available variants for a product (to check which colors are available)
+export const getAvailableVariants = async (productId) => {
+    try {
+        const response = await api.get(`/product/cart/variants/${productId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch available variants' };
+    }
+};
+
+// Add item to cart
+export const addToCart = async (productId, variantId, quantity = 1) => {
+    try {
+        const response = await api.post('/product/cart/add', { 
+            productId, 
+            variantId, 
+            quantity 
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to add item to cart' };
+    }
+};
+
+// Update cart item quantity
+export const updateCartQuantity = async (cartItemId, quantity) => {
+    try {
+        const response = await api.patch(`/product/cart/update/${cartItemId}`, { 
+            quantity 
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to update quantity' };
+    }
+};
+
+// Change variant (e.g., from Red to Black)
+export const changeVariant = async (cartItemId, newVariantId, quantity = 1) => {
+    try {
+        const response = await api.patch(`/product/cart/change-variant/${cartItemId}`, { 
+            newVariantId, 
+            quantity 
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to change variant' };
+    }
+};
+
+// Remove item from cart
+export const removeFromCart = async (cartItemId) => {
+    try {
+        const response = await api.delete(`/product/cart/remove/${cartItemId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to remove item from cart' };
+    }
+};
+
+// Clear entire cart
+export const clearCart = async () => {
+    try {
+        const response = await api.delete('/product/cart/clear/all');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to clear cart' };
+    }
+};
 
 
 

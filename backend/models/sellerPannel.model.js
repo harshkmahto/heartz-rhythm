@@ -52,6 +52,28 @@ const sellerPannelSchema = new mongoose.Schema({
     pickupLocation: { type: String },
     pickupAddress: { type: String },
 
+    status: {
+        type: String,
+        enum: [ 'active', 'inactive', 'pending'],
+        default: 'inactive',
+        required: true
+    },
+
+    availability:{
+        type: Boolean,
+        default: true,
+        required: true
+    },
+
+    reviews: [
+            {
+                user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+                rating: { type: Number, required: true, min: 0, max: 5 },
+                comment: { type: String, trim: true, },
+                createdAt: { type: Date, default: Date.now }
+            }
+        ],
+
 },    { timestamps: true })
 
 sellerPannelSchema.index({ user: 1 }, { unique: true });

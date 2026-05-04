@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { 
@@ -10,143 +10,78 @@ import {
   Music2,
   Guitar as GuitarIcon
 } from 'lucide-react';
-import Button from '../../components/ShowCaseSection/Buttons';
+import { useGetProductsQuery } from '../../utils/productApi';
 
 const Categories = () => {
   const { scrollYProgress } = useScroll();
   const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
 
-  const categories = [
-    {
-      id: 1,
-      name: 'Acoustic Guitars',
-      path: 'acoustic',
-      color: 'from-amber-500 to-orange-500',
-      image: 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&auto=format',
-      description: 'Warm tones, timeless sound',
-      productCount: 42,
-      gradient: 'from-amber-900/80 to-orange-900/80'
-    },
-    {
-      id: 2,
-      name: 'Electric Guitars',
-      path: 'electric',
-      color: 'from-blue-500 to-purple-500',
-      image: 'https://images.unsplash.com/photo-1556438064-2d7646166914?w=800&auto=format',
-      description: 'Powerful, versatile, iconic',
-      productCount: 68,
-      gradient: 'from-blue-900/80 to-purple-900/80'
-    },
-    {
-      id: 3,
-      name: 'Bass Guitars',
-      path: 'bass',
-      color: 'from-green-500 to-emerald-500',
-      image: 'https://images.unsplash.com/photo-1516924962500-2b4b3b99ea02?w=800&auto=format',
-      description: 'Deep rhythm, solid foundation',
-      productCount: 35,
-      gradient: 'from-green-900/80 to-emerald-900/80'
-    },
-    {
-      id: 4,
-      name: 'Semi-Acoustic',
-      path: 'semi-acoustic',
-      color: 'from-red-500 to-pink-500',
-      image: 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&auto=format',
-      description: 'Best of both worlds',
-      productCount: 28,
-      gradient: 'from-red-900/80 to-pink-900/80'
-    },
-    {
-      id: 5,
-      name: 'Accessories',
-      path: 'accessories',
-      color: 'from-purple-500 to-indigo-500',
-      image: 'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=800&auto=format',
-      description: 'Everything you need',
-      productCount: 156,
-      gradient: 'from-purple-900/80 to-indigo-900/80'
-    },
-    {
-      id: 6,
-      name: 'Amplifiers',
-      path: 'amplifiers',
-      color: 'from-yellow-500 to-red-500',
-      image: 'https://images.unsplash.com/photo-1540827459-7c6e5a7e9b0b?w=800&auto=format',
-      description: 'Power your sound',
-      productCount: 45,
-      gradient: 'from-yellow-900/80 to-red-900/80'
-    }
-  ];
+  const { data: productsData, isLoading, error, refetch } = useGetProductsQuery({
+    limit: 1000
+  });
 
-  const brands = [
-    {
-      id: 1,
-      name: 'Fender',
-      logo: 'F',
-      image: 'https://images.unsplash.com/photo-1556440380-0d2c9e4b9d2c?w=800&auto=format',
-      description: 'Legendary American craftsmanship since 1946',
-      productCount: 89,
-      color: 'from-red-600 to-red-700',
-      stats: '4.9 ★',
-      year: '1946'
-    },
-    {
-      id: 2,
-      name: 'Gibson',
-      logo: 'G',
-      image: 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&auto=format',
-      description: 'Iconic shapes that defined rock history',
-      productCount: 67,
-      color: 'from-amber-700 to-amber-800',
-      stats: '4.8 ★',
-      year: '1902'
-    },
-    {
-      id: 3,
-      name: 'Ibanez',
-      logo: 'I',
-      image: 'https://images.unsplash.com/photo-1556438064-2d7646166914?w=800&auto=format',
-      description: 'Precision engineering for modern players',
-      productCount: 54,
-      color: 'from-blue-700 to-blue-800',
-      stats: '4.7 ★',
-      year: '1957'
-    },
-    {
-      id: 4,
-      name: 'Martin',
-      logo: 'M',
-      image: 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&auto=format',
-      description: 'Acoustic excellence since 1833',
-      productCount: 43,
-      color: 'from-amber-600 to-amber-700',
-      stats: '4.9 ★',
-      year: '1833'
-    },
-    {
-      id: 5,
-      name: 'PRS',
-      logo: 'P',
-      image: 'https://images.unsplash.com/photo-1556438064-2d7646166914?w=800&auto=format',
-      description: 'Artistry in sound and design',
-      productCount: 38,
-      color: 'from-purple-700 to-purple-800',
-      stats: '4.8 ★',
-      year: '1985'
-    },
-    {
-      id: 6,
-      name: 'Taylor',
-      logo: 'T',
-      image: 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&auto=format',
-      description: 'Modern innovation in acoustics',
-      productCount: 41,
-      color: 'from-orange-600 to-orange-700',
-      stats: '4.9 ★',
-      year: '1974'
+  const allProducts = useMemo(() => {
+    if (!productsData) return [];
+  
+    if (productsData?.data?.products && Array.isArray(productsData.data.products)) {
+      return productsData.data.products;
     }
-  ];
+
+    if (Array.isArray(productsData)) return productsData;
+    if (productsData?.products && Array.isArray(productsData.products)) return productsData.products;
+    if (productsData?.data && Array.isArray(productsData.data)) return productsData.data;
+    return [];
+  }, [productsData]);
+
+
+  const categories = useMemo(() => {
+    const categoryMap = new Map();
+    
+    allProducts.forEach(product => {
+      const categoryName = product.category;
+      if (!categoryName) return;
+      
+      if (!categoryMap.has(categoryName)) {
+        categoryMap.set(categoryName, {
+          id: categoryName,
+          name: categoryName,
+          path: categoryName.toLowerCase().split(' ')[0],
+          productCount: 1,
+          image: product.thumbnail || product.images?.[0] || 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&auto=format',
+        });
+      } else {
+        categoryMap.get(categoryName).productCount++;
+      }
+    });
+    
+    return Array.from(categoryMap.values());
+  }, [allProducts]);
+
+
+  const brands = useMemo(() => {
+    const brandMap = new Map();
+    
+    allProducts.forEach(product => {
+      const brandName = product.brand;
+      if (!brandName) return;
+      
+      if (!brandMap.has(brandName)) {
+        brandMap.set(brandName, {
+          id: brandName,
+          name: brandName,
+          logo: brandName.charAt(0).toUpperCase(),
+          image: product.images?.[0] || product.thumbnail ||  'https://images.unsplash.com/photo-1556440380-0d2c9e4b9d2c?w=800&auto=format',
+          productCount: 1,
+        });
+      } else {
+        brandMap.get(brandName).productCount++;
+      }
+    });
+    
+    return Array.from(brandMap.values()).sort((a, b) => b.productCount - a.productCount);
+  }, [allProducts]);
+
+ 
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -181,6 +116,35 @@ const Categories = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-600 dark:text-neutral-400">Loading collections...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-red-500 text-6xl mb-4">🎸</div>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-4">Failed to load collections</p>
+          <p className="text-sm text-gray-500 mb-6">{error.message || 'Unknown error'}</p>
+          <button 
+            onClick={() => refetch()}
+            className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 pt-24 pb-16 overflow-x-hidden">
       {/* Animated Background Element */}
@@ -205,7 +169,7 @@ const Categories = () => {
           >
             <Sparkles size={16} className="text-red-500" />
             <span className="text-sm font-medium bg-gradient-to-r from-red-500 to-amber-500 bg-clip-text text-transparent">
-              Find Your Perfect Sound
+              {allProducts.length} Products Available
             </span>
           </motion.div>
           
@@ -229,180 +193,197 @@ const Categories = () => {
           </motion.p>
         </motion.div>
 
-        {/* Categories Section */}
-        <div className="mb-24">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center justify-between mb-10"
-          >
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
-                Instrument Categories
-              </h2>
-              <p className="text-neutral-600 dark:text-neutral-400">Choose your weapon of choice</p>
-            </div>
-            <Link 
-              to="/shop" 
-              className="group hidden md:flex items-center gap-2 px-6 py-2 rounded-full bg-neutral-100 dark:bg-neutral-900 hover:bg-red-500 hover:text-white transition-all duration-300"
+        {/* Categories Section - ONLY from actual products */}
+        {categories.length > 0 && (
+          <div className="mb-24">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="flex items-center justify-between mb-10"
             >
-              <span className="text-sm font-medium">View All</span>
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </motion.div>
-
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {categories.map((category) => (
-              <motion.div
-                key={category.id}
-                variants={itemVariants}
-                whileHover={{ y: -12, scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="group relative"
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
+                  Instrument Categories
+                </h2>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {categories.length} Categories • {allProducts.length} Total Products
+                </p>
+              </div>
+              <Link 
+                to="/shop" 
+                className="group hidden md:flex items-center gap-2 px-6 py-2 rounded-full bg-neutral-100 dark:bg-neutral-900 hover:bg-red-500 hover:text-white transition-all duration-300"
               >
-                <Link to={`/shop/${category.path}`}>
-                  <div className="relative h-96 rounded-2xl overflow-hidden shadow-xl">
-                    {/* Background Image */}
-                    <div className="absolute inset-0">
-                      <img 
-                        src={category.image} 
-                        alt={category.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className={`absolute inset-0 bg-gradient-to-t ${category.gradient} group-hover:opacity-90 transition-opacity duration-300`} />
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                      <div className="mb-4">
-                        <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium">
-                          {category.productCount} Products
-                        </span>
+                <span className="text-sm font-medium">View All</span>
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {categories.map((category) => (
+                <motion.div
+                  key={category.id}
+                  variants={itemVariants}
+                  whileHover={{ y: -12, scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="group relative"
+                >
+                  <Link to={`/category/${category.path}`}>
+                    <div className="relative h-96 rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-gray-900 to-black">
+                      {/* Background Image */}
+                      <div className="absolute inset-0">
+                        <img 
+                          src={category.image} 
+                          alt={category.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
                       </div>
                       
-                      <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-red-400 transition-colors">
-                        {category.name}
-                      </h3>
-                      <p className="text-white/80 text-sm mb-4">
-                        {category.description}
-                      </p>
+                      {/* Content */}
+                      <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                        <div className="mb-4">
+                          <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium">
+                            {category.productCount} Products
+                          </span>
+                        </div>
+                        
+                        <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-red-400 transition-colors">
+                          {category.name}
+                        </h3>
+                        
+                        <div className="flex items-center gap-2 text-white group-hover:gap-3 transition-all">
+                          <span className="text-sm font-medium">Explore Now</span>
+                          <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
                       
-                      <div className="flex items-center gap-2 text-white group-hover:gap-3 transition-all">
-                        <Button text="Explore Now"/>
-                        <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                      {/* Decorative Element */}
+                      <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Music2 size={20} className="text-white" />
                       </div>
                     </div>
-                    
-                    {/* Decorative Element */}
-                    <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Music2 size={20} className="text-white" />
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        )}
 
-        {/* Brands Section */}
-        <div className="mb-24">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center justify-between mb-10"
-          >
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
-                Premium Brands
-              </h2>
-              <p className="text-neutral-600 dark:text-neutral-400">Trusted by legends worldwide</p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-              <GuitarIcon size={20} />
-              <span className="text-sm font-medium">Est. since 1800s</span>
-            </div>
-          </motion.div>
+        {/* Brands Section  */}
+        {brands.length > 0 && (
+          <div className="mb-24">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="flex items-center justify-between mb-10"
+            >
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
+                  Premium Brands
+                </h2>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {brands.length} Brands Available
+                </p>
+              </div>
+              <div className="hidden md:flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+                <GuitarIcon size={20} />
+                <span className="text-sm font-medium">Shop by Brand</span>
+              </div>
+            </motion.div>
 
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {brands.map((brand) => (
-              <motion.div
-                key={brand.id}
-                variants={brandVariants}
-                whileHover={{ y: -8 }}
-                transition={{ type: "spring", stiffness: 200 }}
-                className="group"
-              >
-                <Link to={`/shop?brand=${brand.name.toLowerCase()}`}>
-                  <div className="relative overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-red-500/50 transition-all duration-300">
-                    {/* Brand Image Preview */}
-                    <div className="relative h-48 overflow-hidden">
-                      <img 
-                        src={brand.image} 
-                        alt={brand.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4">
-                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${brand.color} flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
-                          {brand.logo}
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {brands.map((brand) => (
+                <motion.div
+                  key={brand.id}
+                  variants={brandVariants}
+                  whileHover={{ y: -8 }}
+                  transition={{ type: "spring", stiffness: 200 }}
+                  className="group"
+                >
+                  <Link to={`/seller/brand/${brand.name}`}>
+                    <div className="relative overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-red-500/50 transition-all duration-300">
+                      {/* Brand Image Preview */}
+                      <div className="relative h-48 overflow-hidden">
+                        <img 
+                          src={brand.image} 
+                          alt={brand.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-4 left-4">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                            {brand.logo}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="p-5">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-50 group-hover:text-red-500 transition-colors">
-                            {brand.name}
-                          </h3>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                            Since {brand.year}
-                          </p>
+                      
+                      {/* Content */}
+                      <div className="p-5">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-50 group-hover:text-red-500 transition-colors">
+                              {brand.name}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+                              4.8 ★
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                          <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-                            {brand.stats}
+                        
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Premium {brand.name} instruments
+                        </p>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {brand.productCount} Products
+                          </span>
+                          <span className="text-xs text-red-500 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                            Shop Collection <ArrowRight size={12} />
                           </span>
                         </div>
                       </div>
-                      
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 line-clamp-2">
-                        {brand.description}
-                      </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {brand.productCount}+ Products
-                        </span>
-                        <span className="text-xs text-red-500 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                          Shop Collection <ArrowRight size={12} />
-                        </span>
-                      </div>
                     </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        )}
 
-        {/* Trending Banner with Parallax */}
+        {/* No Data Message */}
+        {categories.length === 0 && brands.length === 0 && !isLoading && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🎸</div>
+            <p className="text-neutral-600 dark:text-neutral-400">No products found in the collection.</p>
+            <p className="text-sm text-gray-500 mt-2">Check console for debug info</p>
+            <button 
+              onClick={() => refetch()}
+              className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
+              Refresh
+            </button>
+          </div>
+        )}
+
+        {/* Trending Banner */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -672,7 +672,7 @@ const renderAboutSection = () => {
         productId={productId}
       />
 
-      {/* Sticky Bottom Bar - With Selected Color */}
+      {/* Sticky Bottom Bar  */}
       <AnimatePresence>
         {showStickyBar && (
           <motion.div

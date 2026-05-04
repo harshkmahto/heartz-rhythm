@@ -1,34 +1,98 @@
-import React from 'react';
-import { ShoppingCart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingCart, Check, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { addToCart, getCart } from '../../utils/product.apiRequest';
+import toast from 'react-hot-toast';
 
 const AddToCartButton = ({
   text = 'Add to Cart',
-  isOutOfStock,
-  onAddToCart,
-  isSticky = false
+  product,
+  selectedColor,
+  quantity = 1,
+  isOutOfStock = false,
+  isSticky = false,
+  className = ''
 }) => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInCart, setIsInCart] = useState(false);
+
+  const variantId = selectedColor?._id;
+  const productId = product?._id;
+
+  useEffect(() => {
+    const checkCart = async () => {
+      if (!productId || !variantId) return;
+      try {
+        const response = await getCart();
+        if (response.success && response.data?.items) {
+          const exists = response.data.items.some(
+            item => item.product === productId && item.variantId === variantId
+          );
+          setIsInCart(exists);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    checkCart();
+  }, [productId, variantId]);
+
+  const handleClick = async () => {
+    if (isInCart) {
+      navigate('/cart');
+      return;
+    }
+
+    if (!selectedColor) {
+      toast.error('Please select a color');
+      return;
+    }
+
+    if (isOutOfStock) {
+      toast.error('Out of stock');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await addToCart(productId, variantId, quantity);
+      toast.success('Added to cart');
+      setIsInCart(true);
+    } catch (error) {
+      toast.error(error.message || 'Failed to add');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!selectedColor) {
+    return (
+      <button className={`rounded-full font-semibold px-6 py-3 bg-gray-300 text-gray-500 cursor-not-allowed ${className}`}>
+        Select Color
+      </button>
+    );
+  }
+
+  if (isInCart) {
+    return (
+      <button
+        onClick={handleClick}
+        className={`rounded-full font-semibold px-6 py-3 bg-green-500 text-white hover:bg-green-600 transition ${className}`}
+      >
+        <Check size={18} className="inline mr-2" />
+        Go to Cart
+      </button>
+    );
+  }
+
   return (
     <button
-      onClick={onAddToCart}
-      disabled={isOutOfStock}
-      className={`group relative overflow-hidden rounded-full font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all
-      ${isSticky ? 'px-4 sm:px-6 py-2 text-sm' : 'p-6 py-5'}
-      ${
-        isOutOfStock
-          ? 'bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed'
-          : 'border-2 border-red-500 text-red-500 hover:text-white'
-      }`}
+      onClick={handleClick}
+      disabled={isOutOfStock || isLoading}
+      className={`rounded-full font-semibold px-6 py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition disabled:opacity-50 ${className}`}
     >
-      {/* Sliding Background */}
-      {!isOutOfStock && (
-        <span className="absolute inset-0 w-0 bg-red-600 dark:bg-red-500 transition-all duration-300 ease-in-out group-hover:w-full"></span>
-      )}
-
-      {/* Content */}
-      <span className="relative z-10 flex items-center gap-2">
-        <ShoppingCart size={isSticky ? 16 : 18} />
-        {text}
-      </span>
+      {isLoading ? 'Adding...' : text}
     </button>
   );
 };

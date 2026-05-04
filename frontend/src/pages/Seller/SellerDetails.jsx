@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMySellerPannel } from '../../utils/apiRequest';
+import { getMySellerPannel, updateStatus } from '../../utils/apiRequest';
 import Loader from '../../components/ShowCaseSection/Loader';
 import { Link } from 'react-router-dom';
 import {
@@ -10,12 +10,14 @@ import {
   Store, User, FileText, Banknote, MapPinned, Package, ListChecks,
   Mail as MailIcon, Phone as PhoneIcon,
   Lock, AlertCircle, Image, X, Camera, Trash2, Plus,
-  Pencil
+  Pencil,
+  Loader2
 } from 'lucide-react';
 import SellerButton from '../../components/ShowCaseSection/SellerButton';
 import UpdateSellerMedia from '../../components/Seller/UpdateSellerMedia';
 import UpdateSellerBasicDetails from '../../components/Seller/UpdateSellerBasicDetails';
 import UpdateSellerPersonalDetail from '../../components/Seller/UpdateSellerPersonalDetail';
+import { useAuth } from '../../context/AuthContext';
 
 const SellerDetails = () => {
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,10 @@ const SellerDetails = () => {
   const [mediaPopup, setMediaPopup] = useState(false);
   const [basicPopup, setBasicPopup] = useState(false);
   const [personalPopup, setPersonalPopup] = useState(false);
+  const [enabled, setEnabled] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchSellerDetails = async () => {
@@ -70,6 +76,39 @@ const SellerDetails = () => {
   const handleClosePersonal = () => {
     setPersonalPopup(false);
   };
+
+  const handleToggle = async () => {
+
+    if(!seller) return;
+
+     const userId = user?.id || user?._id;
+    if (!userId) {
+      alert('User ID not found');
+      return;
+    }
+
+
+    const newStatus = seller.status === 'active' ? 'inactive' : 'active';
+
+    setUpdatingStatus(true);
+    try {
+      const response = await updateStatus({ status: newStatus}, userId);
+      if(response.success){
+        setSeller({...seller, status: newStatus});
+       
+      } else {
+        alert(response.message || 'Failed to update status');
+      }
+    } catch (error) {
+       alert(error.message || 'Failed to update status');
+    } finally {
+      setUpdatingStatus(false);
+      seller.status === true ? setEnabled(true) : setEnabled(false);
+    
+    }
+  };
+
+
 
   // LOADING
   if (loading) {
@@ -230,6 +269,66 @@ const SellerDetails = () => {
                 onClick={handleBasic}
                 text='Update details'
               />
+                  {/* Status */}
+             <div className='flex flex-col items-center justify-center mt-8'>
+                <div className='text-center'>
+                  <div className='flex items-center justify-center gap-2 mb-1'>
+                    <div className={`w-3 h-3 rounded-full ${
+                      seller.status === 'active' 
+                        ? 'bg-green-500 animate-pulse' 
+                        : seller.status === 'inactive' 
+                        ? 'bg-red-500' 
+                        : 'bg-yellow-500'
+                    }`}></div>
+                    <span className={`text-sm font-semibold uppercase ${
+                      seller.status === 'active' 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : seller.status === 'inactive' 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-yellow-600 dark:text-yellow-400'
+                    }`}>
+                      {seller.status}
+                    </span>
+                  </div>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>
+                    {seller.status === 'active' 
+                      ? 'Store is visible to customers' 
+                      : seller.status === 'inactive' 
+                      ? 'Store is hidden from customers' 
+                      : 'Pending approval'}
+                  </p>
+                </div>
+
+                {/* ✅ FIXED: Toggle button - Syncs with seller.status */}
+                {seller.status !== 'pending' && (
+                  <div className='mt-3'>
+                    <button
+                      onClick={handleToggle}
+                      disabled={updatingStatus}
+                      className={`w-16 h-8 flex items-center rounded-full p-1 transition-all duration-300 cursor-pointer
+                        ${seller.status === 'active' ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}
+                        ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}
+                      `}
+                    >
+                      {updatingStatus ? (
+                        <Loader2 className="w-4 h-4 text-white animate-spin mx-auto" />
+                      ) : (
+                        <div
+                          className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300
+                            ${seller.status === 'active' ? "translate-x-8" : "translate-x-0"}`}
+                        />
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Show message for pending status */}
+                {seller.status === 'pending' && (
+                  <p className='text-xs text-yellow-600 dark:text-yellow-400 mt-3 text-center'>
+                    Your store is pending approval. Please wait for admin review.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

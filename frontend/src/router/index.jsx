@@ -56,6 +56,13 @@ import ReportedProducts from "../pages/Seller/ReportedProducts";
 import AdminReportDetails from "../pages/Admin/products/AdminReportDetails";
 import AllBlockedProducts from "../pages/Admin/products/AllBlockedProducts";
 import MyBlockedProducts from "../pages/Seller/MyBlockedProducts";
+import CategoryPage from "../pages/ShowCase/CategoryPage";
+import ProductDetail from "../pages/Products/ProductDetail";
+import ReturnReplace from "../pages/ShowCase/ReturnReplace";
+import Terms from "../pages/ShowCase/Terms";
+import Policies from "../pages/ShowCase/Policies";
+import Help from "../pages/Auth/Help";
+import Sellers from "../pages/ShowCase/Sellers";
 
 
 
@@ -83,9 +90,16 @@ const router = createBrowserRouter([
             {path: 'category/acoustic', element: <AcousticCategory/>},
             {path: 'category/electric', element: <ElectricCategory/>},
             {path: 'category/semi-acoustic', element: <SemiAcousticCategory/>},
+            {path: 'category/:categorySlug', element:<CategoryPage/>},
             {path: 'product/details/:productCategory/:productId',element:<ProductAbout/>},
+            {path: 'product/coming-soon/:id',element:<ProductDetail/>},
             {path: 'seller/brand/:brandName', element:<SellerBrandDetails/>},
+            {path: 'sellers', element:<Sellers/>},
 
+            {path: 'returns', element:<ReturnReplace/>},
+            {path: 'terms', element:<Terms/>},
+            {path: 'privacy', element:<Policies/>},
+            {path: 'help', element:<Help/>},
             {path: '*', element: <NotFound/>},
 
 

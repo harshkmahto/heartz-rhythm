@@ -57,13 +57,13 @@ const Category = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center gap-6 md:gap-12 lg:gap-20 py-3 overflow-x-auto scrollbar-hide">
           {categories.map((category) => {
-            const isActive = location.pathname === `/shop/${category.path}` || 
-                           (category.path === 'all' && location.pathname === '/shop');
+            const isActive = location.pathname === `/category/${category.path}` || 
+                           (category.path === 'all' && location.pathname === '/categories');
             
             return (
               <Link
                 key={category.path}
-                to={category.path === 'all' ? '/shop' : `/category/${category.path}`}
+                to={category.path === 'all' ? '/categories' : `/category/${category.path}`}
                 className="group relative"
               >
                 <motion.div

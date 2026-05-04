@@ -9,7 +9,7 @@ import { deleteProfilePicture, deleteUser, forgetPassword, getAllSeller, getAllU
 
 import { authorized, isAdmin, isSeller, protect } from '../middleware/auth.middleware.js';
 import { upload, uploadSellerImages } from '../middleware/upload.middleware.js';
-import { createSellerPannel, getAllSellerPanels, getMySellerPanel, getSellerPanelById, updateBasicDetails, updatePersonalDetails, updateSellerMedia, } from '../controller/sellerPannel.controller.js';
+import { createSellerPannel, getAllSellerPanels, getMySellerPanel, getSellerByIdForAdmin, getSellerForAdmin, getSellerPanelById, updateBasicDetails, updatePersonalDetails, updateSellerMedia, updateStatus, } from '../controller/sellerPannel.controller.js';
 
 
 
@@ -60,12 +60,18 @@ userRoute.post('/seller/pannel/:userId', authorized, protect, isSeller, uploadSe
 userRoute.patch('/seller/pannel-update/media/:userId', authorized, protect, isSeller, uploadSellerImages, updateSellerMedia)
 userRoute.patch('/seller/pannel-update/:userId', authorized, isSeller, protect, updateBasicDetails)
 userRoute.patch('/seller/pannel-update/personal/:userId', authorized, protect, isSeller, updatePersonalDetails)
+userRoute.patch('/seller/pannel-update/status/:userId', authorized, protect, isSeller, updateStatus)
+
 
 userRoute.get('/seller/my-pannel', authorized, protect, isSeller, getMySellerPanel)
 
-
+//PUBLIC
 userRoute.get('/seller/brands', getAllSellerPanels)
 userRoute.get('/seller/brand/:panelId', getSellerPanelById)
+
+//ADMIN
+userRoute.get('/seller/pannel', getSellerForAdmin)
+userRoute.get('/seller/pannel/:panelId', getSellerByIdForAdmin)
 
 
 export default userRoute

@@ -1,22 +1,14 @@
-// Shop.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, Search, ChevronLeft, ChevronRight, Loader, X, Sparkles, Sliders } from 'lucide-react';
 import ShopProductCard from '../../components/Products/ShopProductCard';
-import { getAllPublicProducts } from '../../utils/product.apiRequest'; 
+import { useGetProductsQuery } from '../../utils/productApi'; 
 
 const Shop = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalProducts: 0,
-    limit: 12
-  });
+  
+  // State for filters
   const [filters, setFilters] = useState({
     category: '',
     brand: '',
@@ -27,12 +19,53 @@ const Shop = () => {
     search: '',
     isFeatured: false
   });
+  
   const [filterOptions, setFilterOptions] = useState({
     categories: [],
     brands: [],
     colors: [],
     priceRange: { min: 0, max: 100000 }
   });
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 12;
+
+  const queryParams = {
+    page: currentPage,
+    limit: limit,
+    ...(filters.category && { category: filters.category }),
+    ...(filters.brand && { brand: filters.brand }),
+    ...(filters.color && { color: filters.color }),
+    ...(filters.minPrice && { minPrice: filters.minPrice }),
+    ...(filters.maxPrice && { maxPrice: filters.maxPrice }),
+    ...(filters.search && { search: filters.search }),
+    ...(filters.sortBy && { sortBy: filters.sortBy }),
+    ...(filters.isFeatured && { featured: 'true' })
+  };
+
+  const { 
+    data, 
+    isLoading, 
+    isFetching,
+    error,
+    refetch 
+  } = useGetProductsQuery(queryParams);
+
+  // Extract data from response
+  const products = data?.data?.products || [];
+  const pagination = data?.data?.pagination;
+  const filtersFromApi = data?.data?.filters;
+
+  useEffect(() => {
+    if (filtersFromApi) {
+      setFilterOptions({
+        categories: filtersFromApi.categories || [],
+        brands: filtersFromApi.brands || [],
+        colors: filtersFromApi.colors || [],
+        priceRange: filtersFromApi.priceRange || { min: 0, max: 100000 }
+      });
+    }
+  }, [filtersFromApi]);
 
   // Check screen size
   useEffect(() => {
@@ -46,66 +79,16 @@ const Shop = () => {
     return () => window.removeEventListener('resize', checkScreen);
   }, []);
 
-  // Fetch products
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const params = new URLSearchParams();
-      params.append('page', pagination.currentPage);
-      params.append('limit', pagination.limit);
-      
-      if (filters.category) params.append('category', filters.category);
-      if (filters.brand) params.append('brand', filters.brand);
-      if (filters.color) params.append('color', filters.color);
-      if (filters.minPrice) params.append('minPrice', filters.minPrice);
-      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-      if (filters.search) params.append('search', filters.search);
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.isFeatured) params.append('featured', 'true');
-      
-      const response = await getAllPublicProducts(params);
-      
-      if (response.success) {
-        setProducts(response.data.products);
-        setPagination({
-          currentPage: response.data.pagination.currentPage,
-          totalPages: response.data.pagination.totalPages,
-          totalProducts: response.data.pagination.totalProducts,
-          limit: response.data.pagination.limit
-        });
-        setFilterOptions({
-          categories: response.data.filters.categories || [],
-          brands: response.data.filters.brands || [],
-          colors: response.data.filters.colors || [],
-          priceRange: response.data.filters.priceRange || { min: 0, max: 100000 }
-        });
-      } else {
-        setError(response.message || 'Failed to fetch products');
-      }
-    } catch (err) {
-      setError(err.message || 'An error occurred while fetching products');
-      console.error('Error fetching products:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.currentPage, pagination.limit, filters]);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= pagination.totalPages) {
-      setPagination(prev => ({ ...prev, currentPage: page }));
+    if (page >= 1 && page <= (pagination?.totalPages || 1)) {
+      setCurrentPage(page);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({ ...prev, [filterType]: value }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const handleSearch = (e) => {
@@ -125,14 +108,14 @@ const Shop = () => {
       search: '',
       isFeatured: false
     });
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setCurrentPage(1);
   };
 
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => 
     value && key !== 'sortBy' && key !== 'search'
   ).length;
 
-  // Filter Sidebar Component (reused for both desktop and mobile)
+  // Filter Sidebar Component
   const FilterSidebar = ({ onClose }) => (
     <div className="h-full flex flex-col">
       <div className="p-5 border-b border-red-200 dark:border-red-900 flex items-center justify-between">
@@ -192,7 +175,7 @@ const Shop = () => {
           <label className="text-xs uppercase tracking-widest text-black/60 dark:text-white/60 font-bold mb-3 block">
             Price Range (₹)
           </label>
-          <div className="flex flex-col  gap-3">
+          <div className="flex flex-col gap-3">
             <input 
               type="number"
               placeholder={`₹${filterOptions.priceRange.min}`}
@@ -263,7 +246,7 @@ const Shop = () => {
                   }`}
                 >
                   <div 
-                    className="w-8 h-8 rounded-full border-2 border-red-500  shadow-md"
+                    className="w-8 h-8 rounded-full border-2 border-red-500 shadow-md"
                     style={{ backgroundColor: color.colorCode || '#ccc' }}
                   />
                   <span className="text-xs capitalize text-black dark:text-white">{color._id}</span>
@@ -310,7 +293,8 @@ const Shop = () => {
     </div>
   );
 
-  if (loading && products.length === 0) {
+  // Loading state
+  if (isLoading && products.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-100 via-white to-red-50 dark:from-red-950 dark:via-black dark:to-red-950">
         <Loader className="w-12 h-12 animate-spin text-red-500" />
@@ -432,18 +416,20 @@ const Shop = () => {
             )}
 
             <div className="text-sm text-black/60 dark:text-white/60 mb-4">
-              Showing <span className="text-black dark:text-white font-bold">{products.length}</span> of <span className="text-black dark:text-white font-bold">{pagination.totalProducts}</span> instruments
+              Showing <span className="text-black dark:text-white font-bold">{products.length}</span> of <span className="text-black dark:text-white font-bold">{pagination?.totalProducts || 0}</span> instruments
             </div>
 
             {/* Product Grid */}
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader className="w-8 h-8 animate-spin text-red-500" />
+            {isFetching && products.length > 0 && (
+              <div className="flex justify-center py-4 mb-4">
+                <Loader className="w-6 h-6 animate-spin text-red-500" />
               </div>
-            ) : error ? (
+            )}
+            
+            {error ? (
               <div className="text-center py-20">
-                <p className="text-red-500 mb-4">{error}</p>
-                <button onClick={fetchProducts} className="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
+                <p className="text-red-500 mb-4">{error.message || 'Failed to load products'}</p>
+                <button onClick={() => refetch()} className="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
                   Try Again
                 </button>
               </div>
@@ -467,11 +453,11 @@ const Shop = () => {
             )}
 
             {/* Pagination */}
-            {pagination.totalPages > 1 && (
+            {pagination && pagination.totalPages > 1 && (
               <div className="mt-12 flex justify-center items-center gap-2">
                 <button 
-                  onClick={() => handlePageChange(pagination.currentPage - 1)}
-                  disabled={pagination.currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
                   className="w-10 h-10 rounded-full border border-red-200 dark:border-red-900 flex items-center justify-center text-black dark:text-white hover:bg-red-500 hover:text-white hover:border-red-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={18} />
@@ -481,12 +467,12 @@ const Shop = () => {
                   let pageNum;
                   if (pagination.totalPages <= 5) {
                     pageNum = i + 1;
-                  } else if (pagination.currentPage <= 3) {
+                  } else if (currentPage <= 3) {
                     pageNum = i + 1;
-                  } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                  } else if (currentPage >= pagination.totalPages - 2) {
                     pageNum = pagination.totalPages - 4 + i;
                   } else {
-                    pageNum = pagination.currentPage - 2 + i;
+                    pageNum = currentPage - 2 + i;
                   }
                   
                   return (
@@ -494,7 +480,7 @@ const Shop = () => {
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum)}
                       className={`w-10 h-10 rounded-full transition-all font-bold ${
-                        pagination.currentPage === pageNum
+                        currentPage === pageNum
                           ? 'bg-red-500 text-white'
                           : 'border border-red-200 dark:border-red-900 hover:bg-red-500 hover:text-white text-black dark:text-white'
                       }`}
@@ -504,7 +490,7 @@ const Shop = () => {
                   );
                 })}
                 
-                {pagination.totalPages > 5 && pagination.currentPage < pagination.totalPages - 2 && (
+                {pagination.totalPages > 5 && currentPage < pagination.totalPages - 2 && (
                   <>
                     <span className="px-2 text-black/60 dark:text-white/60">...</span>
                     <button
@@ -517,8 +503,8 @@ const Shop = () => {
                 )}
                 
                 <button 
-                  onClick={() => handlePageChange(pagination.currentPage + 1)}
-                  disabled={pagination.currentPage === pagination.totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === pagination.totalPages}
                   className="w-10 h-10 rounded-full border border-red-200 dark:border-red-900 flex items-center justify-center text-black dark:text-white hover:bg-red-500 hover:text-white hover:border-red-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={18} />
@@ -538,13 +524,13 @@ const Shop = () => {
             exit={{ opacity: 0 }}
             className="fixed top-14 inset-0 z-50"
           >
-            <div className="absolute   backdrop-blur-sm" onClick={() => setIsFilterOpen(false)} />
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsFilterOpen(false)} />
             <motion.div 
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="absolute left-0 top-0 bottom-0 w-full max-w-65 bg-white dark:bg-black shadow-2xl overflow-y-auto"
+              className="absolute left-0 top-0 bottom-0 w-full max-w-80 bg-white dark:bg-black shadow-2xl overflow-y-auto"
             >
               <FilterSidebar onClose={() => setIsFilterOpen(false)} />
             </motion.div>
