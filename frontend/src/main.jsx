@@ -7,16 +7,19 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import { SellerProvider } from './context/SellerContext.jsx'
 import { Provider } from 'react-redux';
 import { store } from './store/store.js'
+import { CartProvider } from './context/CartContext.jsx'
 
 createRoot(document.getElementById('root')).render(
 
    <AuthProvider>
      <SellerProvider>
+      <CartProvider>
       <Provider store={store}>
       <ThemeProvider>
         <RouterProvider router={router} />
       </ThemeProvider>
       </Provider>
+      </CartProvider>
      </SellerProvider>
    </AuthProvider> 
   

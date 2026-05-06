@@ -8,7 +8,7 @@ const AddToWishlist = ({ productId, variantId, className = '', iconSize = 20, sh
   const [loading, setLoading] = useState(false);
   const { user } = useAuth(); // Get user from your auth context
 
-  // Check if product is already in wishlist
+  
   useEffect(() => {
     if (user && productId) {
       checkWishlistStatus();
@@ -31,8 +31,8 @@ const AddToWishlist = ({ productId, variantId, className = '', iconSize = 20, sh
     e.stopPropagation();
     
     if (!user) {
-      // Redirect to login or show login modal
-      window.location.href = '/login';
+      
+      window.location.href = '/auth';
       return;
     }
 

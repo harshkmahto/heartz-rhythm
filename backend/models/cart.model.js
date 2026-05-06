@@ -20,47 +20,24 @@ const cartItemSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 1,
+        max: 3,
     },
-    basePrice: {
+    mrp: {  
         type: Number,
         required: true,
-        min: 0,
     },
-    finalPrice: {
+    finalPrice: {  
         type: Number,
         required: true,
-        min: 0,
     },
-    thumbnail: {
-        type: String,
-        required: true,
-    },
-    title: {
-        type: String,
-        required: true,
-    },
-    brand: {
-        type: String,
-        required: true,
-    },
-    category: {
-        type: String,
-        required: true,
-    },
-    subCategory: {
-        type: String,
-    },
-    colorName: {
-        type: String,
-        required: true,
-    },
-    colorCode: {
-        type: String, 
-    },
-    stock: {
-        type: Number, 
-        required: true,
-    }
+    thumbnail: String,
+    title: String,
+    brand: String,
+    category: String,
+    subCategory: String,
+    colorName: String,
+    colorCode: String,
+    stock: Number,
 }, { timestamps: true });
 
 cartItemSchema.index({ user: 1, product: 1, variantId: 1 }, { unique: true });

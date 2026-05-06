@@ -10,7 +10,7 @@ import { authorized, isAdmin, isSeller, protect } from '../middleware/auth.middl
 import { uploadProductImages } from '../middleware/upload.middleware.js';
 import { addToWishlist, checkInWishlist, clearWishlist, getWishlist, getWishlistCount, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { applyPriceRules, createPriceRule, deletePriceRule, getAllPriceRules, getPriceRuleOptions, updatePriceRule } from '../controller/priceRule.controller.js';
-import { addToCart, changeVariant, clearCart, getAvailableVariants, getCart, getCartCount, removeFromCart, updateCartQuantity } from '../controller/cart.controller.js';
+import { addToCart, changeVariant, checkVariantInCart, getCart,  removeFromCart, updateCartQuantity } from '../controller/cart.controller.js';
 
 
 
@@ -60,15 +60,15 @@ productRoute.get('/wishlist/check/:productId', authorized, checkInWishlist )
 //----------------------------------------CART-------------------------------------------
 
 productRoute.post('/cart/add', authorized, addToCart)
+
 productRoute.patch('/cart/update/:cartItemId', authorized, updateCartQuantity)
 productRoute.patch('/cart/change-variant/:cartItemId', authorized, protect, changeVariant)
 
 productRoute.get('/cart', authorized, getCart)
-productRoute.get('/cart/count', authorized, getCartCount)
-productRoute.get('/cart/variants/:productId', authorized, getAvailableVariants)
+productRoute.get('/cart/variant/:productId/:variantId', authorized, checkVariantInCart)
 
 productRoute.delete('/cart/remove/:cartItemId', authorized, removeFromCart)
-productRoute.delete('/cart/clear/all', authorized, clearCart)
+
 
 
 

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MobileMenu from './MenuBar';
 import { useAuth } from '../../context/AuthContext';
 import Button from './Buttons';
+import { useCart } from '../../context/CartContext';
 
 function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -14,6 +15,8 @@ function Navbar() {
   const [lastScrollY, setLastScrollY] = useState(0);
 
   const {isAuthenticated} = useAuth();
+  const {cartCount} = useCart();
+
   // Handle scroll visibility
   useEffect(() => {
     const handleScroll = () => {
@@ -120,7 +123,7 @@ function Navbar() {
             >
               <ShoppingCart size={20} />
               <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-400 text-white text-[10px] h-4 w-4 flex items-center justify-center rounded-full font-bold shadow-md">
-                2
+                {cartCount}
               </span>
             </motion.div>
           </Link>
