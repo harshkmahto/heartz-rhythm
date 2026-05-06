@@ -75,135 +75,98 @@ export const getCart = async (req, res) => {
     }
 };
 
+
 // Add item to cart
 export const addToCart = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { productId, variantId, quantity = 1 } = req.body;
-        
+        const { productId, variantId } = req.body;
+
         if (!productId || !variantId) {
             return res.status(400).json({
                 success: false,
                 message: 'Product ID and Variant ID are required'
             });
         }
-        
-        // Get product with variants
+
+        // Check product
         const product = await Product.findOne({
             _id: productId,
             status: 'active',
             isBlocked: false
         });
-        
+
         if (!product) {
             return res.status(404).json({
                 success: false,
                 message: 'Product not found or unavailable'
             });
         }
-        
-        // Find the selected variant
-        const selectedVariant = product.variants.find(v => v._id.toString() === variantId);
-        
-        if (!selectedVariant) {
+
+        // Find variant
+        const variant = product.variants.find(
+            v => v._id.toString() === variantId
+        );
+
+        if (!variant) {
             return res.status(404).json({
                 success: false,
                 message: 'Variant not found'
             });
         }
-        
-        // Check if variant is available
-        if (!selectedVariant.isAvailable) {
+
+        if (!variant.isAvailable || variant.stock <= 0) {
             return res.status(400).json({
                 success: false,
-                message: `${selectedVariant.name} is currently out of stock`
+                message: 'Item is out of stock'
             });
         }
-        
-        // Check stock
-        if (selectedVariant.stock < quantity) {
-            return res.status(400).json({
-                success: false,
-                message: `Only ${selectedVariant.stock} units available for ${selectedVariant.name}`
-            });
-        }
-        
-        // Check if same product with same variant already exists in cart
-        const existingItem = await Cart.findOne({
+
+        // Check existing cart item
+        let cartItem = await Cart.findOne({
             user: userId,
-            product: productId,
             variantId: variantId
         });
-        
-        if (existingItem) {
-            return res.status(400).json({
-                success: false,
-                message: `${selectedVariant.name} variant is already in cart. Update quantity instead.`
+
+        if (cartItem) {
+            // increase quantity by 1
+            if (cartItem.quantity + 1 > variant.stock) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Stock limit reached'
+                });
+            }
+
+            cartItem.quantity += 1;
+            await cartItem.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Quantity increased',
+                data: cartItem
             });
         }
-        
-        // Calculate final price with discounts
-        const discountPercent = product.discount?.value || 0;
-        const discountType = product.discount?.type || 'percentage';
-        
-        let finalPrice = selectedVariant.basePrice;
-        if (discountPercent > 0) {
-            if (discountType === 'percentage') {
-                finalPrice = selectedVariant.basePrice - (selectedVariant.basePrice * discountPercent / 100);
-            } else {
-                finalPrice = selectedVariant.basePrice - discountPercent;
-            }
-        }
-        
-        // Create cart item
-        const cartItem = new Cart({
+
+        // Create new cart item (quantity = 1)
+        cartItem = await Cart.create({
             user: userId,
             product: productId,
             variantId: variantId,
-            quantity: quantity,
-            basePrice: selectedVariant.basePrice,
-            finalPrice: finalPrice,
-            thumbnail: product.thumbnail,
+            quantity: 1,
+            price: variant.basePrice, // keep simple
             title: product.title,
-            brand: product.brand,
-            category: product.category,
-            subCategory: product.subCategory,
-            colorName: selectedVariant.name,
-            colorCode: selectedVariant.colorCode,
-            stock: selectedVariant.stock
+            thumbnail: product.thumbnail
         });
-        
-        await cartItem.save();
-        
-        // Get updated cart
-        const cartItems = await Cart.find({ user: userId }).populate('product', 'title thumbnail brand');
-        
-        const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-        const subtotal = cartItems.reduce((sum, item) => sum + (item.basePrice * item.quantity), 0);
-        const grandTotal = cartItems.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
-        
+
         return res.status(200).json({
             success: true,
-            message: `${selectedVariant.name} ${product.title} added to cart`,
-            data: {
-                item: cartItem,
-                summary: {
-                    totalItems,
-                    subtotal,
-                    grandTotal,
-                    discountTotal: subtotal - grandTotal
-                }
-            }
+            message: 'Item added to cart',
+            data: cartItem
         });
-        
+
     } catch (error) {
         console.error('Add to cart error:', error);
-        if (error.code === 11000) {
-            return res.status(400).json({
-                success: false,
-                message: 'This variant is already in your cart'
-            });
-        }
+
         return res.status(500).json({
             success: false,
             message: error.message
