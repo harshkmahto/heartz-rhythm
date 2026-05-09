@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, ShoppingBag, LayoutDashboard, Home, Sun, Moon, Heart, ShoppingCart, Package, Settings, LogOut, Crown } from 'lucide-react';
+import { X, User, ShoppingBag, LayoutDashboard, Home, Sun, Moon, Heart, ShoppingCart, Package, Settings, LogOut, Crown, User2 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import Button from './Buttons';
 import { useAuth } from '../../context/AuthContext';
@@ -26,6 +26,12 @@ const MobileMenu = ({ isOpen, onClose }) => {
     onClose();
   }
 
+  const handleProfile = () => {
+    navigate('/profile');
+    onClose();
+  }
+
+
   const mainMenuItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/shop', label: 'Shop', icon: ShoppingBag },
@@ -46,8 +52,23 @@ const MobileMenu = ({ isOpen, onClose }) => {
     
     return (
       <div className="px-4 py-3 mb-2 bg-red-50 dark:bg-neutral-800 rounded-xl">
+        <div 
+        onClick={handleProfile}
+        className="flex items-center gap-3 mb-2 cursor-pointer">
+          {user?.profilePicture?.url ? (
+            <img
+              src={user?.profilePicture?.url}
+              alt={user.name}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className='flex justify-center items-center w-10 h-10 rounded-full bg-rose-200 dark:bg-rose-600 '>
+              <User2 />
+            </div>
+          )}
         <div className="font-semibold text-neutral-900 dark:text-white">
           {user.name}
+        </div>
         </div>
         <div className="text-sm text-neutral-500 dark:text-neutral-400">
           {user.email}

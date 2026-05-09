@@ -5,7 +5,7 @@ const UserManagement = () => {
   return (
     <div className='min-h-screen '>
       <div className='text-center'>
-      <RoundedText text="All Users"/>
+      <RoundedText text="All Users" textColor=''/>
       </div>
       <div>
         <p className='text-2xl font-black'>USER MANAGEMENT</p>

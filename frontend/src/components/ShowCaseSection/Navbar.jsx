@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { Moon, Sun, ShoppingCart, User, Search, Menu } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -9,13 +9,15 @@ import Button from './Buttons';
 import { useCart } from '../../context/CartContext';
 
 function Navbar() {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   const {isAuthenticated} = useAuth();
   const {cartCount} = useCart();
+
+  const navigate = useNavigate();
+
 
   // Handle scroll visibility
   useEffect(() => {
@@ -89,23 +91,11 @@ function Navbar() {
         <div className="flex items-center gap-3 md:gap-5">
           {/* Search */}
           <div className="relative hidden md:block">
-            <AnimatePresence>
-              {isSearchOpen && (
-                <motion.input
-                  initial={{ width: 0, opacity: 0, scale: 0.9 }}
-                  animate={{ width: 220, opacity: 1, scale: 1 }}
-                  exit={{ width: 0, opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-10 top-1/2 -translate-y-1/2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-full px-4 py-1.5 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-neutral-900 dark:text-neutral-50 origin-right shadow-lg"
-                  placeholder="Search guitars..."
-                  autoFocus
-                />
-              )}
-            </AnimatePresence>
+          
             <motion.button 
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsSearchOpen(!isSearchOpen)} 
+              onClick={() => navigate('/search')} 
               className="text-gray-500 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               <Search size={20} className='cursor-pointer' />

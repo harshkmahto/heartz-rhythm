@@ -1,5 +1,5 @@
 // contexts/SellerContext.jsx
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { getMySellerPannel, getMe } from '../utils/apiRequest';
 
 const SellerContext = createContext();
@@ -17,14 +17,13 @@ export const SellerProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchSellerData = async () => {
+  const fetchSellerData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       const userResponse = await getMe();
       const userRole = userResponse.user?.role;
-      
       
       if (userRole === 'seller') {
         const response = await getMySellerPannel();
@@ -33,27 +32,29 @@ export const SellerProvider = ({ children }) => {
         setSeller(null);
       }
     } catch (err) {
-   
-      
       if (err.status !== 401 && err.status !== 403) {
-       
         setError(err.message || 'Failed to fetch seller data');
       }
       setSeller(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSellerData();
-  }, []);
+  }, [fetchSellerData]);
+
+  const refreshSeller = useCallback(async () => {
+    await fetchSellerData();
+  }, [fetchSellerData]);
 
   const value = {
     seller,
     loading,
     error,
-    isSellerExists: !!seller
+    isSellerExists: !!seller,
+    refreshSeller
   };
 
   return (

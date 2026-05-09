@@ -206,7 +206,7 @@ const AllUsers = () => {
                 <div className='bg-white/80 dark:bg-black backdrop-blur-sm  rounded-xl shadow-lg mb-6 overflow-hidden border border-red-100 dark:border-red-900/30'>
                     <div className='border-b border-red-100 dark:border-red-900 p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950 dark:to-black'>
                         <span className='flex justify-center'>
-                            <RoundedText text="Filter Panel"/>
+                            <RoundedText text="Filter Panel" textColor=''/>
                         </span>
                     </div>
                     <div className='p-4'>
@@ -258,7 +258,7 @@ const AllUsers = () => {
                 {/* Users List Section */}
                 <div className='mb-4'>
                     <span className='flex justify-center items-center mb-4'>
-                        <RoundedText text="Users List"/>
+                        <RoundedText text="Users List" textColor=''/>
                     </span>
                     
                     {/* Pagination Controls (Top) */}

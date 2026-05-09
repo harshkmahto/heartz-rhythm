@@ -95,12 +95,36 @@ export const createProduct = async (req, res) => {
             data.videos = videoUrls;
         }
 
-        // Process showcase images (dynamic field names like 'showCase_0', 'showCase_1', etc.)
+       // Process showcase images (dynamic field names like 'showCase_0', 'showCase_1', etc.)
         const showcaseFiles = files.filter(f => f.fieldname.startsWith('showCase_'));
-        if (showcaseFiles.length > 0 && data.showCase && Array.isArray(data.showCase)) {
-            for (let i = 0; i < showcaseFiles.length && i < data.showCase.length; i++) {
-                const uploadResult = await uploadImage(showcaseFiles[i], 'products/showcase');
-                data.showCase[i].image = uploadResult.url;
+        if (showcaseFiles.length > 0) {
+            let showCaseItems = [];
+
+            if (req.body.productData) {
+                const parsedData = JSON.parse(req.body.productData);  
+                if (parsedData.showCase && Array.isArray(parsedData.showCase)) {
+                    showCaseItems = parsedData.showCase;
+                }
+            } else if (data.showCase && Array.isArray(data.showCase)) {
+                showCaseItems = data.showCase;
+            }
+            
+            if (showCaseItems.length > 0) {
+                for (let i = 0; i < showcaseFiles.length && i < showCaseItems.length; i++) {
+                    const uploadResult = await uploadImage(showcaseFiles[i], 'products/showcase');
+                    showCaseItems[i].image = uploadResult.url;
+                }
+                data.showCase = showCaseItems;
+            } else {
+                data.showCase = [];
+                for (let i = 0; i < showcaseFiles.length; i++) {
+                    const uploadResult = await uploadImage(showcaseFiles[i], 'products/showcase');
+                    data.showCase.push({
+                        image: uploadResult.url,
+                        key: '',
+                        value: ''
+                    });
+                }
             }
         }
         
@@ -319,12 +343,10 @@ export const updateProduct = async (req, res) => {
         const sellerId = req.user.id;
         let updateData = req.body;
         
-        // Parse if coming as FormData
         if (updateData.productData) {
             updateData = JSON.parse(updateData.productData);
         }
         
-        // Check if product exists and belongs to seller
         const existingProduct = await ProductModel.findOne({ 
             _id: productId, 
             seller: sellerId 
@@ -337,60 +359,121 @@ export const updateProduct = async (req, res) => {
             });
         }
         
-        const files = req.files;
+        const files = req.files || [];
         
-        // Handle file uploads for updates
-        if (files?.thumbnail?.[0]) {
-            const uploadResult = await uploadImage(files.thumbnail[0], "products/thumbnail");
+        const thumbnailFile = files.find(f => f.fieldname === 'thumbnail');
+        if (thumbnailFile) {
+            const uploadResult = await uploadImage(thumbnailFile, "products/thumbnail");
             updateData.thumbnail = uploadResult.url;
+        } else if (updateData.existingThumbnail) {
+            updateData.thumbnail = updateData.existingThumbnail;
         }
         
-        if (files?.images?.length > 0) {
+        const imageFiles = files.filter(f => f.fieldname === 'images');
+        if (imageFiles.length > 0) {
             const imageUrls = [];
-            for (let i = 0; i < files.images.length; i++) {
-                const uploadResult = await uploadImage(files.images[i], "products/images");
+            for (const img of imageFiles) {
+                const uploadResult = await uploadImage(img, "products/images");
                 imageUrls.push(uploadResult.url);
             }
-            // If sending new images, either replace or append based on query param
             if (req.query.appendImages === 'true') {
-                updateData.images = [...(existingProduct.images || []), ...imageUrls];
+                updateData.images = [...(updateData.existingImages || existingProduct.images || []), ...imageUrls];
             } else {
                 updateData.images = imageUrls;
             }
+        } else if (updateData.existingImages) {
+            updateData.images = updateData.existingImages;
         }
         
-        if (files?.gallery?.length > 0) {
+        const galleryFiles = files.filter(f => f.fieldname === 'gallery');
+        if (galleryFiles.length > 0) {
             const galleryUrls = [];
-            for (const gallery of files.gallery) {
+            for (const gallery of galleryFiles) {
                 const uploadResult = await uploadImage(gallery, 'products/gallery');
                 galleryUrls.push(uploadResult.url);
             }
             if (req.query.appendGallery === 'true') {
-                updateData.gallery = [...(existingProduct.gallery || []), ...galleryUrls];
+                updateData.gallery = [...(updateData.existingGallery || existingProduct.gallery || []), ...galleryUrls];
             } else {
                 updateData.gallery = galleryUrls;
             }
+        } else if (updateData.existingGallery) {
+            updateData.gallery = updateData.existingGallery;
         }
         
-        if (files?.preview?.[0]) {
-            const uploadResult = await uploadImage(files.preview[0], 'products/preview');
+        const previewFile = files.find(f => f.fieldname === 'preview');
+        if (previewFile) {
+            const uploadResult = await uploadImage(previewFile, 'products/preview');
             updateData.preview = uploadResult.url;
+        } else if (updateData.existingPreview) {
+            updateData.preview = updateData.existingPreview;
         }
         
-        if (files?.videos?.length > 0) {
+        const videoFiles = files.filter(f => f.fieldname === 'videos');
+        if (videoFiles.length > 0) {
             const videoUrls = [];
-            for (const video of files.videos) {
+            for (const video of videoFiles) {
                 const uploadResult = await uploadImage(video, 'products/videos');
                 videoUrls.push(uploadResult.url);
             }
             if (req.query.appendVideos === 'true') {
-                updateData.videos = [...(existingProduct.videos || []), ...videoUrls];
+                updateData.videos = [...(updateData.existingVideos || existingProduct.videos || []), ...videoUrls];
             } else {
                 updateData.videos = videoUrls;
             }
+        } else if (updateData.existingVideos) {
+            updateData.videos = updateData.existingVideos;
         }
         
-    
+        let finalShowCase = [];
+        
+        if (updateData.existingShowcase && Array.isArray(updateData.existingShowcase)) {
+            finalShowCase = [...updateData.existingShowcase];
+        } else if (existingProduct.showCase && Array.isArray(existingProduct.showCase)) {
+            finalShowCase = [...existingProduct.showCase];
+        }
+        
+        if (updateData.showCase && Array.isArray(updateData.showCase)) {
+            for (const newItem of updateData.showCase) {
+                finalShowCase.push({
+                    key: newItem.key,
+                    value: newItem.value,
+                    image: null
+                });
+            }
+        }
+        
+        const showcaseFiles = files.filter(f => f.fieldname.startsWith('showCase_'));
+        if (showcaseFiles.length > 0) {
+            const newShowcaseStartIndex = finalShowCase.length - showcaseFiles.length;
+            for (let i = 0; i < showcaseFiles.length; i++) {
+                const uploadResult = await uploadImage(showcaseFiles[i], 'products/showcase');
+                const itemIndex = newShowcaseStartIndex + i;
+                if (itemIndex >= 0 && itemIndex < finalShowCase.length) {
+                    finalShowCase[itemIndex].image = uploadResult.url;
+                }
+            }
+        }
+        
+        for (let i = 0; i < finalShowCase.length; i++) {
+            if (!finalShowCase[i].image) {
+                const existingItem = existingProduct.showCase?.find(
+                    (item, idx) => item.key === finalShowCase[i].key && item.value === finalShowCase[i].value
+                );
+                if (existingItem && existingItem.image) {
+                    finalShowCase[i].image = existingItem.image;
+                }
+            }
+        }
+        
+        finalShowCase = finalShowCase.filter(item => item.image);
+        
+        if (finalShowCase.length > 0) {
+            updateData.showCase = finalShowCase;
+        } else if (updateData.showCase === undefined && updateData.existingShowcase === undefined) {
+            updateData.showCase = [];
+        }
+        
         if (updateData.variants && Array.isArray(updateData.variants)) {
             updateData.variants = updateData.variants.map(variant => {
                 if (variant.finalPrice === undefined || variant.finalPrice === null) {
@@ -399,10 +482,8 @@ export const updateProduct = async (req, res) => {
                 return variant;
             });
             
-            // Recalculate total stock
             updateData.totalStock = updateData.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
             
-          
             if (updateData.totalStock === 0) {
                 updateData.isAvailable = false;
             } else {
@@ -410,7 +491,6 @@ export const updateProduct = async (req, res) => {
             }
         }
         
-        // Validate discount
         if (updateData.discount && updateData.discount.value > 0) {
             if (updateData.discount.type === 'percentage' && updateData.discount.value > 100) {
                 return res.status(400).json({
@@ -420,7 +500,6 @@ export const updateProduct = async (req, res) => {
             }
         }
         
-        // Handle status and isComingSoon
         if (updateData.status === 'scheduled' || updateData.status === 'draft') {
             if (updateData.isComingSoon === undefined) {
                 updateData.isComingSoon = true;
@@ -429,7 +508,23 @@ export const updateProduct = async (req, res) => {
             updateData.isComingSoon = false;
         }
         
-        // Update product
+        if (updateData.status === 'scheduled' && req.body.scheduledAt) {
+            updateData.scheduledAt = new Date(req.body.scheduledAt);
+            if (updateData.scheduledAt < new Date()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Scheduled date cannot be in the past'
+                });
+            }
+        }
+        
+        delete updateData.existingImages;
+        delete updateData.existingGallery;
+        delete updateData.existingVideos;
+        delete updateData.existingShowcase;
+        delete updateData.existingThumbnail;
+        delete updateData.existingPreview;
+        
         const updatedProduct = await ProductModel.findByIdAndUpdate(
             productId,
             { $set: updateData },
@@ -443,13 +538,13 @@ export const updateProduct = async (req, res) => {
         });
         
     } catch (error) {
+        console.error('Update product error:', error);
         return res.status(500).json({
             success: false,
             message: error.message
         });
     }
 };
-
 // DELETE PRODUCT - BY SELLER
 export const deleteProduct = async (req, res) => {
     try {
@@ -1661,6 +1756,7 @@ export const getAllPublicProducts = async (req, res) => {
         // Build filter - only active products
         let filter = { 
             status: 'active',
+            aviability: true,
             isBlocked: false
         };
         
@@ -1714,7 +1810,7 @@ export const getAllPublicProducts = async (req, res) => {
         // Execute queries
         const [products, totalProducts] = await Promise.all([
             ProductModel.find(filter)
-                .select('title subtitle description features thumbnail images variants discount totalStock category subCategory brand isFeatured mostOrderProduct bestSeller mostLovedProduct mostViewedProduct mostSerchedProduct totalSold viewCount searchCount createdAt')
+                .select('title subtitle description features thumbnail images variants discount totalStock category subCategory brand isFeatured mostOrderProduct bestSeller mostLovedProduct mostViewedProduct mostSerchedProduct totalSold viewCount searchCount reviews createdAt')
                 .populate('sellerPanel', 'brandName logo sellerName')
                 .sort(sort)
                 .skip(skip)
@@ -1806,10 +1902,12 @@ export const getSinglePublicProduct = async (req, res) => {
         const product = await ProductModel.findOne({ 
             _id: productId, 
             status: 'active',
+            aviability: true,
             isBlocked: false
         })
-        .select('title subtitle description features about showCase thumbnail images gallery preview videos variants discount totalStock category subCategory brand replacement return seo isFeatured mostOrderProduct bestSeller mostLovedProduct mostViewedProduct mostSerchedProduct totalSold viewCount searchCount createdAt updatedAt')
+        .select('title subtitle description features about showCase thumbnail images gallery preview videos variants discount totalStock category subCategory brand replacement return seo isFeatured mostOrderProduct bestSeller mostLovedProduct mostViewedProduct mostSerchedProduct totalSold viewCount searchCount reviews ')
         .populate('sellerPanel', 'brandName brandDescription brandCategory brandSubCategory logo coverImage sellerName companyLocation brandSince brandSpeciality')
+        .populate('reviews.user', 'name email profilePicture')
         .lean();
         
         if (!product) {

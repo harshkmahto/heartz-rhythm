@@ -274,55 +274,66 @@ const SellerUpdateProduct = () => {
     delete productData.images;
     delete productData.gallery;
     delete productData.videos;
-    delete productData.showCase;
+
     
-    // Add existing media URLs (only if they exist)
+    if (formData.showCase && formData.showCase.length > 0) {
+        productData.showCase = formData.showCase.map(item => ({
+            key: item.key,
+            value: item.value,
+        }));
+    }
+    
+    if (existingShowcase && existingShowcase.length > 0) {
+        productData.existingShowcase = existingShowcase;
+    }
+    
     if (existingImages.length) productData.existingImages = existingImages;
     if (existingGallery.length) productData.existingGallery = existingGallery;
     if (existingVideos.length) productData.existingVideos = existingVideos;
-    if (existingShowcase.length) productData.existingShowcase = existingShowcase;
     if (existingThumbnail) productData.existingThumbnail = existingThumbnail;
     if (existingPreview) productData.existingPreview = existingPreview;
     
     submitData.append('productData', JSON.stringify(productData));
     
-    // Append new files (with null checks)
+    // Append new files
     if (formData.thumbnail) submitData.append('thumbnail', formData.thumbnail);
     if (formData.preview) submitData.append('preview', formData.preview);
     
     if (formData.images && formData.images.length) {
-      formData.images.forEach(img => submitData.append('images', img));
+        formData.images.forEach(img => submitData.append('images', img));
     }
     if (formData.gallery && formData.gallery.length) {
-      formData.gallery.forEach(img => submitData.append('gallery', img));
+        formData.gallery.forEach(img => submitData.append('gallery', img));
     }
     if (formData.videos && formData.videos.length) {
-      formData.videos.forEach(video => submitData.append('videos', video));
+        formData.videos.forEach(video => submitData.append('videos', video));
     }
     
     if (formData.showCase && formData.showCase.length) {
-      formData.showCase.forEach((item, idx) => {
-        if (item.image) submitData.append(`showCase_${idx}`, item.image);
-      });
+        formData.showCase.forEach((item, idx) => {
+            if (item.image && item.image instanceof File) {
+                submitData.append(`showCase_${idx}`, item.image);
+            }
+        });
     }
     
     if (formData.status === 'scheduled' && selectedDateTime) {
-      submitData.append('scheduledAt', selectedDateTime.toISOString());
+        submitData.append('scheduledAt', selectedDateTime.toISOString());
     }
     
     try {
-      const response = await updateProduct(productId, submitData);
-      if (response.success) {
-        alert('Product updated successfully!');
-        navigate(`/seller/product/details/${productId}`);
-      }
+        const response = await updateProduct(productId, submitData);
+        if (response.success) {
+            alert('Product updated successfully!');
+            navigate(`/seller/product/details/${productId}`);
+        }
     } catch (error) {
-      console.error('Update error:', error);
-      alert(error.message || 'Failed to update product');
+        console.error('Update error:', error);
+        alert(error.message || 'Failed to update product');
     } finally {
-      setSubmitting(false);
+        setSubmitting(false);
     }
-  };
+};
 
   const ToggleSwitch = ({ enabled, onChange }) => (
     <button

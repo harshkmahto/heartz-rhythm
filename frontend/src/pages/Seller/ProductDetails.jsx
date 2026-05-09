@@ -12,6 +12,7 @@ import {
 import { getMySingleProduct } from '../../utils/product.apiRequest';
 import UpdateProducts from '../../components/Seller/Products/UpdateProducts';
 import DeleteProdut from '../../components/Seller/Products/DeleteProdut';
+import ProductReviews from '../../components/Products/ProductReviews';
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -488,6 +489,9 @@ const ProductDetails = () => {
             </div>
           </div>
         )}
+
+        <ProductReviews product={product} productId={product._id} />
+
 
         {/* SEO SECTION */}
         {product.seo && (product.seo.title || product.seo.description || product.seo.keywords?.length > 0) && (

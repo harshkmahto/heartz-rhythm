@@ -374,7 +374,15 @@ const SellerPanel = () => {
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full blur-md group-hover:blur-lg transition-all dark:bg-gradient-to-r dark:from-emerald-500 dark:to-green-500"></div>
                       <div className="relative w-9 h-9 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center shadow-md dark:bg-gradient-to-br dark:from-emerald-600 dark:to-green-600">
-                        <User className="w-4.5 h-4.5 text-white" strokeWidth={1.8} />
+                        {user?.profilePicture?.url ? (
+                          <img
+                            src={user?.profilePicture?.url}
+                            alt="Profile"
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          <User className="w-5 h-5 text-white" strokeWidth={1.8} />
+                        )}
                       </div>
                     </div>
                   </button>

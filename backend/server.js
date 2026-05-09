@@ -9,6 +9,7 @@ import dns from 'dns';
 import productRoute from './routes/product.routes.js';
 import inventoryRoute from './routes/inventory.routes.js';
 import reviewsRoute from './routes/review.routes.js';
+import orderRoute from './routes/order.routes.js';
 
 
 dns.setServers(["1.1.1.1","8.8.8.8"]);
@@ -31,6 +32,7 @@ app.use('/user', userRoute)
 app.use('/product', productRoute )
 app.use('/seller/inventory', inventoryRoute)
 app.use('/reviews', reviewsRoute)
+app.use('/order', orderRoute)
 
 
 

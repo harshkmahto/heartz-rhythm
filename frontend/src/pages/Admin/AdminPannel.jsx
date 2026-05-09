@@ -383,7 +383,19 @@ const AdminPanel = () => {
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 rounded-full blur-md group-hover:blur-lg transition-all dark:bg-gradient-to-r dark:from-red-600 dark:to-red-800"></div>
                       <div className="relative w-9 h-9 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center shadow-md dark:bg-gradient-to-br dark:from-red-600 dark:to-red-800">
-                        <User className="w-4.5 h-4.5 text-white" strokeWidth={1.8} />
+                        {user.profilePicture?.url ? 
+                        (
+                          <img 
+                            src={user.profilePicture?.url} 
+                            alt={user.name} 
+                            className="w-full h-full rounded-full" 
+                          />
+
+                        ) : (
+                             <User className="w-4.5 h-4.5 text-white" strokeWidth={1.8} />
+
+                        )
+                       }
                       </div>
                     </div>
                   </button>

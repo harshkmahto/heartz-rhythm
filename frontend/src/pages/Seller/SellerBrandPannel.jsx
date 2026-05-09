@@ -14,6 +14,10 @@ import { useSeller } from '../../context/SellerContext';
 import Loader from '../../components/ShowCaseSection/Loader';
 import { updateStatus } from '../../utils/apiRequest';
 import { useAuth } from '../../context/AuthContext';
+import SellerReviews from '../../components/Seller/SellerReviews';
+import toast from 'react-hot-toast';
+import SellingOnOff from '../../components/Seller/Products/sellingOnOff';
+
 
 const SellerBrandPanel = () => {
   const [updatePopup, setupdatePopup] = useState(false);
@@ -30,7 +34,7 @@ const SellerBrandPanel = () => {
 
   const handleUpdateClose = () => {
     setupdatePopup(false);
-    refreshSeller(); // Refresh seller data after update
+    refreshSeller(); 
   };
 
   const handleImageModel = (img) => {
@@ -44,7 +48,7 @@ const SellerBrandPanel = () => {
     
     const userId = user?.id || user?._id;
     if (!userId) {
-      alert('User ID not found');
+      toast.error('User ID not found');
       return;
     }
 
@@ -54,14 +58,14 @@ const SellerBrandPanel = () => {
     try {
       const response = await updateStatus({ status: newStatus }, userId);
       if (response.success) {
-        await refreshSeller(); // Refresh seller data from context
-        alert(`Store status updated to ${newStatus}`);
+        await refreshSeller(); 
+        toast.success('Status updated successfully');
       } else {
         alert(response.message || 'Failed to update status');
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      alert(error.message || 'Failed to update status');
+      toast.error('Failed to update status');
     } finally {
       setUpdatingStatus(false);
     }
@@ -281,6 +285,9 @@ const SellerBrandPanel = () => {
                     </p>
                   )}
                 </div>
+                <div className="mt-4 flex flex-col items-end">
+                  <SellingOnOff/>
+                </div>
               </div>
             </div>
           </div>
@@ -408,6 +415,11 @@ const SellerBrandPanel = () => {
             </div>
           </div>
         </div>
+
+        <SellerReviews 
+          seller={seller} 
+          sellerId={seller._id}
+          />
 
         {/* Preview Images Section */}
         {seller.previewImage && seller.previewImage.length > 0 && (

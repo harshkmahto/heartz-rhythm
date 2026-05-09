@@ -201,7 +201,11 @@ const CreateProducts = () => {
     if (showCaseInput.key.trim() && showCaseInput.value.trim() && showCaseInput.image) {
       setFormData(prev => ({
         ...prev,
-        showCase: [...prev.showCase, { ...showCaseInput, imagePreview: showCaseImagePreview }]
+        showCase: [...prev.showCase, {
+           key: showCaseInput.key,
+           value: showCaseInput.value,
+           image: showCaseInput.image,
+          imagePreview: showCaseImagePreview }]
       }));
       setShowCaseInput({ key: '', value: '', image: null });
       setShowCaseImagePreview(null);
@@ -238,8 +242,14 @@ const CreateProducts = () => {
     delete productData.images;
     delete productData.gallery;
     delete productData.videos;
-    delete productData.showCase;
-    
+  
+    if(productData.showCase && productData.showCase.length > 0) {
+      productData.showCase = productData.showCase.map(item => ({
+        key: item.key,
+        value: item.value,
+        
+      }));
+    }
     submitData.append('productData', JSON.stringify(productData));
     
     if (formData.thumbnail) submitData.append('thumbnail', formData.thumbnail);

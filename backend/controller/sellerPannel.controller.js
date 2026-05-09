@@ -421,7 +421,8 @@ export const getMySellerPanel = async (req, res) => {
         const userId = req.user.id; 
 
         const sellerPanel = await SellerPannel.findOne({ user: userId })
-            .populate('user', 'name email'); 
+            .populate('user', 'name email ')
+            .populate('reviews.user', 'name profilePicture');
 
        
 
@@ -440,6 +441,66 @@ export const getMySellerPanel = async (req, res) => {
     }
 };
 
+export const getMySellerPanelById = async (req, res) => {
+    try {
+        const { panelId } = req.params;
+        const userId = req.user.id;
+
+        const sellerPanel = await SellerPannel.findById(panelId)
+            .populate('user', 'name email profilePicture')
+            .populate('reviews.user', 'name profilePicture');
+
+        if (!sellerPanel) {
+            return res.status(404).json({
+                success: false,
+                message: "Seller panel not found"
+            });
+        }
+
+        if (sellerPanel.user._id.toString() !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You can only view your own seller panel."
+            });
+        }
+
+        const products = await ProductModel.find({ 
+            seller: userId,
+            sellerPanel: panelId
+        })
+        .select('title thumbnail category subCategory brand status discount totalStock totalSold viewCount createdAt')
+        .sort({ createdAt: -1 });
+
+        const stats = {
+            totalProducts: products.length,
+            activeProducts: products.filter(p => p.status === 'active').length,
+            draftProducts: products.filter(p => p.status === 'draft').length,
+            scheduledProducts: products.filter(p => p.status === 'scheduled').length,
+            totalStock: products.reduce((sum, p) => sum + (p.totalStock || 0), 0),
+            totalSold: products.reduce((sum, p) => sum + (p.totalSold || 0), 0),
+            featuredProducts: products.filter(p => p.isFeatured).length,
+            
+        };
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                sellerInfo: sellerPanel,
+                products: {
+                    list: products,
+                    stats: stats
+                }
+            }
+        });
+     
+    } catch (err) {
+        return res.status(500).json({ 
+            success: false,
+            message: "Failed to fetch seller panel", 
+            error: err.message 
+        });
+    }
+};
 
 // GET ALL SELLER FOR PUBLIC
 export const getAllSellerPanels = async (req, res) => {
@@ -488,6 +549,7 @@ export const getSellerPanelById = async (req, res) => {
         const products = await ProductModel.find({ 
             sellerPanel: panelId,
             status: 'active',
+            aviability: true,
             isBlocked: false, 
         })
         .select('title thumbnail category  discount ') 
@@ -539,7 +601,9 @@ export const getSellerByIdForAdmin = async (req, res) => {
         const { pannelId } = req.params;  
 
         const sellerPanel = await SellerPannel.findById(pannelId)  
-            .populate('user', 'name email');
+            .populate('user', 'name email')
+            .populate('reviews.user', 'name profilePicture');
+
 
         if (!sellerPanel) {
             return res.status(404).json({
@@ -562,3 +626,67 @@ export const getSellerByIdForAdmin = async (req, res) => {
     }
 };
 
+
+
+// STORE OPEN/CLOSE BY SELLER
+export const storeOpenClose = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { storeStatus } = req.body; 
+
+        if (!storeStatus || !['open', 'close'].includes(storeStatus)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide valid store status. Allowed values: 'open' or 'close'"
+            });
+        }
+
+        const sellerPanel = await SellerPannel.findOne({ user: userId });
+
+        if (!sellerPanel) {
+            return res.status(404).json({
+                success: false,
+                message: "Seller panel not found"
+            });
+        }
+
+        if (sellerPanel.status !== 'active') {
+            return res.status(403).json({
+                success: false,
+                message: "Your seller account is not active. Please contact admin."
+            });
+        }
+
+        // Update store status
+        sellerPanel.store = storeStatus;
+        await sellerPanel.save();
+
+        // Update all products based on store status
+        let productAviability = storeStatus === 'open';
+        
+        const updateResult = await ProductModel.updateMany(
+            { seller: userId, sellerPanel: sellerPanel._id },
+            { $set: { aviability: productAviability } }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: storeStatus === 'open' 
+                ? "Store opened successfully! Your products are now visible to customers."
+                : "Store closed successfully! Your products are now hidden from customers.",
+            data: {
+                storeStatus: sellerPanel.store,
+                productsUpdated: updateResult.modifiedCount,
+                totalProducts: updateResult.matchedCount
+            }
+        });
+
+    } catch (error) {
+        console.error('Store open/close error:', error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update store status",
+            error: error.message
+        });
+    }
+};

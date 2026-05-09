@@ -11,13 +11,16 @@ import {
   Mail as MailIcon, Phone as PhoneIcon,
   Lock, AlertCircle, Image, X, Camera, Trash2, Plus,
   Pencil,
-  Loader2
+  Loader2,
+  ListOrdered
 } from 'lucide-react';
 import SellerButton from '../../components/ShowCaseSection/SellerButton';
 import UpdateSellerMedia from '../../components/Seller/UpdateSellerMedia';
 import UpdateSellerBasicDetails from '../../components/Seller/UpdateSellerBasicDetails';
 import UpdateSellerPersonalDetail from '../../components/Seller/UpdateSellerPersonalDetail';
 import { useAuth } from '../../context/AuthContext';
+import SellerReviews from '../../components/Seller/SellerReviews';
+import SellingOnOff from '../../components/Seller/Products/sellingOnOff';
 
 const SellerDetails = () => {
   const [loading, setLoading] = useState(true);
@@ -329,6 +332,9 @@ const SellerDetails = () => {
                   </p>
                 )}
               </div>
+              <div className='flex flex-col items-center justify-center mt-8'>
+                <SellingOnOff/>
+              </div>
             </div>
           </div>
         </div>
@@ -497,7 +503,7 @@ const SellerDetails = () => {
           {/* RIGHT COLUMN - Private Information */}
           <div className="space-y-6">
             
-            {/* Private Banner */}
+        
             <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
@@ -614,9 +620,58 @@ const SellerDetails = () => {
                 </div>
               </div>
             )}
+
+            {/* Additinal Information */}
+
+              <div className="bg-emerald-50 dark:bg-black/95 backdrop-blur-sm rounded-2xl p-6 border border-emerald-200/50 dark:border-emerald-800/30 shadow-xl hover:shadow-2xl transition-all duration-300">
+                 <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl">
+                    <ListOrdered className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">Additional Information</h3>
+                </div>
+
+                <div className='space-y-3'>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Products</p>
+                      <p className="text-gray-800 dark:text-gray-200 font-mono text-sm mt-1">{seller.totalProducts}</p>
+                    </div>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Active Products</p>
+                      <p className="text-gray-800 dark:text-gray-200 font-mono text-sm mt-1">{seller.activeProducts}</p>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Draft Products</p>
+                      <p className="text-gray-800 dark:text-gray-200 font-mono text-sm mt-1">{seller.draftProducts}</p>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Scheduled Products</p>
+                      <p className="text-gray-800 dark:text-gray-200 font-mono text-sm mt-1">{seller.scheduledProducts}</p>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Stock</p>
+                      <p className="text-gray-800 dark:text-gray-200 font-mono text-sm mt-1">{seller.totalStock}</p>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Featured Products</p>
+                      <p className="text-gray-800 dark:text-gray-200 font-mono text-sm mt-1">{seller.featuredProducts}</p>
+                    </div>
+
+                </div>
+                
+            </div>
+
+
+
           </div>
         </div>
       </div>
+
+      <SellerReviews seller={seller}/>
 
       {/* Popups - Fixed with proper overlays */}
       {mediaPopup && (

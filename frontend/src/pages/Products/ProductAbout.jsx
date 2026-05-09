@@ -19,6 +19,7 @@ import SellerInProduct from '../../components/Products/SellerInProduct';
 import SimmilerPRoduct from '../../components/Products/SimmilerPRoduct';
 import SameSellerProduct from '../../components/Products/SameSellerProduct';
 import AddToWishlist from '../../components/Products/AddToWishlist';
+import ProductReviews from '../../components/Products/ProductReviews';
 
 const ProductAbout = () => {
   const { productId } = useParams();
@@ -161,14 +162,13 @@ const renderAboutSection = () => {
   if (product.about && Array.isArray(product.about) && product.about.length > 0) {
     return (
       <div>
-        <h2 className="text-2xl font-bold text-black dark:text-white mb-4">Key Specifications</h2>
         <div className="space-y-3">
           {product.about.map((item, index) => {
 
         if (!item.key || !item.value) return null;
             
             return (
-              <div key={item._id || index} className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-red-100 dark:border-red-900">
+              <div key={item._id || index} className="flex flex-col sm:flex-row justify-center py-3 border-b border-red-100 dark:border-red-900">
                 <span className="text-black/60 dark:text-white/60 font-medium mb-1 sm:mb-0 sm:min-w-[200px]">
                   {item.key}
                 </span>
@@ -198,15 +198,12 @@ const renderAboutSection = () => {
   // Handle add to cart with selected color
   const handleAddToCart = () => {
     if (isOutOfStock) return;
-    console.log('Added to cart:', { product, selectedColor, quantity: 1 });
-    // Add  cart logic here
+ 
   };
 
   // Handle buy now
   const handleBuyNow = () => {
     if (isOutOfStock) return;
-    console.log('Buy now:', { product, selectedColor, quantity: 1 });
-    // Add buy now logic here
   };
 
   const copyHandler = () => {
@@ -521,34 +518,44 @@ const renderAboutSection = () => {
           {/* Showcase Section - Mobile Optimized */}
           {product.showCase && product.showCase.length > 0 && (
             <div className="mb-16">
-              <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Product Showcase</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 {product.showCase.map((item, idx) => (
-                  <div key={idx} className="bg-white/50 dark:bg-black/50 rounded-2xl overflow-hidden border border-red-200 dark:border-red-900">
+                  <div key={idx} className="flex flex-col justify-center gap-6">
+                    <div className='w-56 h-56 rounded-2xl ml-5'>
                     {item.image && (
-                      <img src={item.image} alt={item.title || 'Showcase'} className="w-full h-56 md:h-64 object-cover" />
+                      <img 
+                        src={item.image} 
+                        alt={item.key || 'Showcase'} 
+                        className="w-full h-full rounded-2xl md:h-64 object-cover" 
+                      />
                     )}
-                    <div className="p-4 md:p-6">
-                      {item.title && <h3 className="text-lg md:text-xl font-bold text-black dark:text-white mb-2">{item.title}</h3>}
-                      {item.description && (
-                        <p className="text-black/60 dark:text-white/60 text-sm md:text-base">{item.description}</p>
-                      )}
-                      {item.specs && typeof item.specs === 'object' && Object.keys(item.specs).length > 0 && (
-                        <div className="mt-4 space-y-2">
-                          {Object.entries(item.specs).map(([key, value]) => (
-                            <div key={key} className="flex flex-col sm:flex-row sm:justify-between text-sm">
-                              <span className="text-black/50 dark:text-white/50">{key}</span>
-                              <span className="text-black dark:text-white font-medium">{String(value)}</span>
-                            </div>
-                          ))}
+
+                    </div>          
+                    {item.key && item.value && (
+                      <div className="p-4">
+                        <div className="flex flex-col  sm:justify-between gap-2">
+                          <span className="text-black dark:text-white font-bold text-xl">
+                            {item.key}
+                          </span>
+                          <span className="text-black dark:text-white font-medium text-sm">
+                            {item.value}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+
+          {/* Reviews section */}
+          <ProductReviews 
+            product={product}
+            productId={productId}
+          />
+
 
           {/* Videos Section - Full Width Horizontal Scroll */}
           {product.videos && product.videos.length > 0 && (

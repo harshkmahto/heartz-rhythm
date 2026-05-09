@@ -325,6 +325,16 @@ export const updateStatus = async (data, userId) => {
   }
 };
 
+// STORE OPEN/CLOSED
+export const storeOpenClose = async (storeStatus) => {
+  try {
+    const response = await api.patch(`/user/seller/store`,{ storeStatus});
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Store open/closed update failed' };
+  }
+}
+
 
 // GET SELLER PANEL - Get seller panel data 
 export const getMySellerPannel = async () => {
@@ -335,6 +345,17 @@ export const getMySellerPannel = async () => {
     throw error.response?.data || { message: 'Failed to fetch seller panel' };
   }
 };
+
+// GET SINGLE SELLER PANEL - Get single seller panel data
+export const getMySellerPanelById = async (panelId) => {
+  try {
+    const response = await api.get(`/user/seller/my-pannel/${panelId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch single seller panel' };
+  }
+
+  }
 
 // GET SELLER BRAND
 export const getAllSellerPanels = async () => {

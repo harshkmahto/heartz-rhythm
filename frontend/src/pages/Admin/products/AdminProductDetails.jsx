@@ -18,6 +18,7 @@ import { getSingleProduct } from '../../../utils/product.apiRequest';
 import { FaRegCopyright } from 'react-icons/fa';
 import ReportingPRoduct from '../../../components/Admin/products/ReportingProduct';
 import BlockProducts from '../../../components/Admin/products/BlockProducts';
+import ProductReviews from '../../../components/Products/ProductReviews';
 
 
 const AdminProductDetails = () => {
@@ -573,6 +574,9 @@ const AdminProductDetails = () => {
               </div>
             </div>
           )}
+
+          <ProductReviews product={product} />
+
 
           {/* SEO SECTION */}
           {product.seo && (product.seo.title || product.seo.description || product.seo.keywords?.length > 0) && (

@@ -59,9 +59,10 @@ const sellerPannelSchema = new mongoose.Schema({
         required: true
     },
 
-    availability:{
-        type: Boolean,
-        default: true,
+    store:{
+        type: String,
+        enum: [ 'open', 'close'],
+        default: 'open',
         required: true
     },
 

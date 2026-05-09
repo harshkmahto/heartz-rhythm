@@ -63,6 +63,8 @@ import Terms from "../pages/ShowCase/Terms";
 import Policies from "../pages/ShowCase/Policies";
 import Help from "../pages/Auth/Help";
 import Sellers from "../pages/ShowCase/Sellers";
+import SerchPage from "../pages/Products/SerchPage";
+import Address from "../pages/Order/Address";
 
 
 
@@ -95,6 +97,8 @@ const router = createBrowserRouter([
             {path: 'product/coming-soon/:id',element:<ProductDetail/>},
             {path: 'seller/brand/:brandName', element:<SellerBrandDetails/>},
             {path: 'sellers', element:<Sellers/>},
+            {path: 'search', element:<SerchPage/>},
+            {path: 'my-address', element:<Address/>},
 
             {path: 'returns', element:<ReturnReplace/>},
             {path: 'terms', element:<Terms/>},

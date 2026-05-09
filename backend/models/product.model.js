@@ -147,6 +147,13 @@ const productSchema = new mongoose.Schema({
         default: null 
     },  
 
+    aviability: {
+        type: Boolean,
+        default: true,
+        required: true,
+        index:true
+    },
+
     isBlocked: { type: Boolean, default: false, index:true },
     blockReason: { type: String, trim: true },
     blockedAt: { type: Date },
