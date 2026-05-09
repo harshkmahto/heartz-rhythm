@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is already logged in (on page load)
+  // Check if user is already logged in
   useEffect(() => {
     checkAuth();
   }, []);
@@ -29,7 +29,6 @@ export const AuthProvider = ({ children }) => {
       const token = document.cookie.split('; ').find(row => row.startsWith('token='));
       
       if (!token) {
-        // No token, user is not logged in
         setUser(null);
         setIsAuthenticated(false);
         setLoading(false);

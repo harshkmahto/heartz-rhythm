@@ -13,8 +13,8 @@ import {
 import { getSinglePublicProduct } from '../../utils/product.apiRequest';
 import Loader from '../../components/ShowCaseSection/Loader';
 import CheckPin from '../../components/Products/CheckPin';
-import AddToCartButton from '../../components/ShowCaseSection/AddToCartButton';
-import BuyNowButton from '../../components/ShowCaseSection/BuyNowButton';
+import AddToCartButton from '../../components/Products/AddToCartButton';
+import BuyNowButton from '../../components/Products/BuyNowButton';
 import SellerInProduct from '../../components/Products/SellerInProduct';
 import SimmilerPRoduct from '../../components/Products/SimmilerPRoduct';
 import SameSellerProduct from '../../components/Products/SameSellerProduct';
@@ -637,7 +637,7 @@ const renderAboutSection = () => {
 
           
 
-          {/* Gallery Section with Hover Effect - Mobile Optimized */}
+          {/* Gallery Section  */}
           {product.gallery && product.gallery.length > 0 && (
             <div className="mb-16">
               <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Gallery</h2>
@@ -679,63 +679,99 @@ const renderAboutSection = () => {
         productId={productId}
       />
 
-      {/* Sticky Bottom Bar  */}
-      <AnimatePresence>
-        {showStickyBar && (
-          <motion.div
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            exit={{ y: 100 }}
-            className="fixed bottom-4 left-4 right-4 md:bottom-0 md:left-0 md:right-0 bg-white/10 dark:bg-black/10 backdrop-blur-lg border border-red-200 dark:border-red-900 shadow-2xl z-40 rounded-none md:rounded-full"
-          >
-            <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4">
-              <div className="flex  items-center justify-between w-full gap-3">
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <img src={product.thumbnail} alt={product.title} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover" />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-black dark:text-white text-sm line-clamp-1">{product.title}</h4>
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-base sm:text-lg font-bold text-black dark:text-white">₹{finalPrice.toLocaleString('en-IN')}</span>
-                      {hasDiscount && mrp > finalPrice && (
-                        <span className="text-xs text-black/50 dark:text-white/50 line-through">₹{mrp.toLocaleString('en-IN')}</span>
-                      )}
+     <AnimatePresence>
+  {showStickyBar && (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed bottom-4 left-0 right-0 z-50 px-4"
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="backdrop-blur-md bg-white/10 dark:bg-black/10 border border-red-200 dark:border-red-900 shadow-2xl rounded-2xl md:rounded-full overflow-hidden px-4 sm:px-6 py-4">
+          
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            
+            {/* Product Info */}
+            <div className="flex items-center gap-4 min-w-0">
+              <img
+                src={product.thumbnail}
+                alt={product.title}
+                className="w-14 h-14 rounded-xl object-cover border border-zinc-200 dark:border-zinc-700"
+              />
+
+              <div className="min-w-0">
+                <h4 className="font-semibold text-sm sm:text-base text-black dark:text-white truncate">
+                  {product.title}
+                </h4>
+
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="text-lg font-bold text-black dark:text-white">
+                    ₹{finalPrice.toLocaleString('en-IN')}
+                  </span>
+
+                  {hasDiscount && mrp > finalPrice && (
+                    <span className="text-sm text-zinc-500 line-through">
+                      ₹{mrp.toLocaleString('en-IN')}
+                    </span>
+                  )}
+
+                  {stockStatus && (
+                    <div
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.bg} ${stockStatus.color}`}
+                    >
+                      {stockStatus.text}
                     </div>
-                    {/* Selected Color Display */}
-                    {selectedColor && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <div 
-                          className="w-5 h-5 rounded-full border"
-                          style={{ backgroundColor: selectedColor.colorCode || '#ccc' }}
-                        />
-                        <span className="text-xs text-black/60 dark:text-white/60 capitalize">{selectedColor.name}</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 w-full ">
-                  <div className={` px-2 py-1 rounded-full text-xs font-medium ${stockStatus.bg} ${stockStatus.color}`}>
-                    {stockStatus.text}
+
+                {selectedColor && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div
+                      className="w-4 h-4 rounded-full border border-white shadow"
+                      style={{
+                        backgroundColor:
+                          selectedColor.colorCode || "#ccc",
+                      }}
+                    />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
+                      {selectedColor.name}
+                    </span>
                   </div>
-                  <AddToCartButton 
-                    product={product}
-                    selectedColor={selectedColor}
-                    isOutOfStock={isOutOfStock}
-                    onAddToCart={handleAddToCart}
-                    isSticky={true}
-                  />
-                  <BuyNowButton 
-                    product={product}
-                    selectedColor={selectedColor}
-                    isOutOfStock={isOutOfStock}
-                    onBuyNow={handleBuyNow}
-                    isSticky={true}
-                  />
-                </div>
+                )}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              <div className="flex-1 lg:flex-none">
+                <AddToCartButton
+                  product={product}
+                  selectedColor={selectedColor}
+                  isOutOfStock={isOutOfStock}
+                  onAddToCart={handleAddToCart}
+                  isSticky={true}
+                />
+              </div>
+
+              <div className="flex-1 lg:flex-none">
+                <BuyNowButton
+                  product={product}
+                  selectedColor={selectedColor}
+                  isOutOfStock={isOutOfStock}
+                  onBuyNow={handleBuyNow}
+                  isSticky={true}
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Gallery Modal */}
       <AnimatePresence>

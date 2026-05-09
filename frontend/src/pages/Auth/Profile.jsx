@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Settings, Package, Heart, LogOut, ChevronRight, Edit3, Guitar, Music, Calendar, ShoppingCart, X, Check, ShoppingBag, Crown, CrownIcon, Mail, Phone, Calendar as CalendarIcon } from 'lucide-react';
+import { User, Settings, Package, Heart, LogOut, ChevronRight, Edit3, Guitar, Music, Calendar, ShoppingCart, X, Check, ShoppingBag, Crown, CrownIcon, Mail, Phone, Calendar as CalendarIcon, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import NotLoggedin from '../../components/ShowCaseSection/NotLoggedin';
@@ -264,6 +264,17 @@ const Profile = () => {
                   <div className="flex items-center gap-3 cursor-pointer">
                     <ShoppingCart size={18} />
                     <span>My Cart</span>
+                  </div>
+                  <ChevronRight size={16} />
+                </button>
+
+                <button 
+                  onClick={() => navigate('/my-address')}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all"
+                >
+                  <div className="flex items-center gap-3 cursor-pointer">
+                    <Home size={18} />
+                    <span>My Address</span>
                   </div>
                   <ChevronRight size={16} />
                 </button>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, Eye, EyeClosed } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../../utils/apiRequest'; 
+import { useAuth } from '../../context/AuthContext';
 
 const Login = ({ onToggle }) => {
   const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ const Login = ({ onToggle }) => {
   const [errors, setErrors] = useState({ email: "", password: "" });
 
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -49,6 +51,7 @@ const Login = ({ onToggle }) => {
       const response = await loginUser({ email, password });
       
       if (response && response.user) {
+        await checkAuth();
         navigate("/");
       } else {
         setErrors({ email: "", password: "Invalid email or password" });

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EyeClosed, EyeIcon } from 'lucide-react';
 import { loginUser } from '../../utils/apiRequest';
+import { useAuth } from '../../context/AuthContext';
+
 
 const SellerLogin = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +14,7 @@ const SellerLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { checkAuth, logout } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,9 +51,11 @@ const SellerLogin = () => {
       if (response && response.user) {
         
         if (response.user.role === 'seller') {
+          await checkAuth();
           navigate('/seller');
         } else {
-          navigate('/');
+          alert("it's seems like you are not seller, you are not seller")
+         await logout();
         }
       }
       

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Trash2, ShoppingBag, Tag, Percent, Star, AlertCircle, ShoppingBasket, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getWishlist, removeFromWishlist, clearWishlist } from '../../utils/product.apiRequest';
-import AddToCartButton from '../../components/ShowCaseSection/AddToCartButton';
+import AddToCartButton from '../../components/Products/AddToCartButton';
 import Loader from '../../components/ShowCaseSection/Loader';
 import NotLoggedin from '../../components/ShowCaseSection/NotLoggedin'; 
 import { FaShoppingBag, FaShoppingCart } from 'react-icons/fa';

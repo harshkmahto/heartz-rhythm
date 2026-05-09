@@ -44,9 +44,10 @@ const MobileMenu = ({ isOpen, onClose }) => {
     { path: '/orders', label: 'My Orders', icon: Package },
     { path: '/cart', label: 'My Cart', icon: ShoppingCart },
     { path: '/wishlist', label: 'Wishlist', icon: Heart },
+    { path: '/my-address', label: 'My Address', icon: Home }
   ];
 
-  // Fixed profile component - this should return JSX properly
+  // profile component
   const ProfileInfo = () => {
     if (!user) return null;
     
