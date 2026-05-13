@@ -1,7 +1,7 @@
 import {Router} from 'express'
 
 
-import { blockProduct, createProduct, createProductReport, deleteProduct, getAllProducts, getAllPublicProducts, getAllReports, getComingSoon, getComingSoonDetails, getMyProducts, getProductById, getProductStatistics, getReportById, getReportedProductsForSeller, getReportStatistics, getSingleProductForAdmin, getSinglePublicProduct, sellerRespondToReport, takeActionOnReport, updateProduct, updateProductStatus, updateReport, updateReportStatus } from '../controller/product.controller.js';
+import { blockProduct, couponApplied, createProduct, createProductReport, deleteProduct, getAllProducts, getAllPublicProducts, getAllReports, getComingSoon, getComingSoonDetails, getMyProducts, getProductById, getProductCoupon, getProductStatistics, getReportById, getReportedProductsForSeller, getReportStatistics, getSingleProductForAdmin, getSinglePublicProduct, sellerRespondToReport, takeActionOnReport, updateProduct, updateProductStatus, updateReport, updateReportStatus } from '../controller/product.controller.js';
 
 
 
@@ -46,6 +46,16 @@ productRoute.get('/public/products', getAllPublicProducts)
 productRoute.get('/public/products/:productId', getSinglePublicProduct)
 productRoute.get('/public/comingsoon', getComingSoon)
 productRoute.get('/public/comingsoon/:productId', getComingSoonDetails)
+productRoute.get('/public/coupon/:productId', getProductCoupon)
+
+productRoute.post('/public/coupon/apply/:productId', authorized, couponApplied)
+
+
+
+
+
+
+
 
 //-----------------------------------------WISHLIST------------------------------------
 

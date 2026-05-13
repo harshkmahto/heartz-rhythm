@@ -55,7 +55,7 @@ function Navbar() {
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : -100 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-15 bg-white/10 backdrop-blur  transition-colors duration-300"
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-15 bg-transparent  backdrop-blur-md  transition-colors duration-300"
       >
         {/* Logo - Left Side */}
         <Link 
@@ -73,12 +73,10 @@ function Navbar() {
               to={`/${item.toLowerCase()}`}
               className="group relative overflow-hidden font-headline tracking-tight text-black/90 dark:text-white/90"
             >
-              {/* Original text - slides up on hover */}
               <div className="transition-transform duration-300 ease-out group-hover:-translate-y-full">
                 {item}
               </div>
               
-              {/* Duplicate text - slides up from bottom on hover */}
               <div className="absolute inset-0 transition-transform duration-300 ease-out translate-y-full group-hover:translate-y-0">
                 {item}
               </div>

@@ -74,3 +74,102 @@ export const setSelectedAddress = async (addressId) => {
         throw error.response?.data || { message: 'Selected address update failed' };
     }
 }
+
+//------------------CHECKOUT------------------
+export const createCheckout = async (checkoutData) => {
+    try {
+        const response = await axios.post('/order/checkout', checkoutData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Checkout creation failed' };
+    }
+}
+
+export const getMyCheckout = async () => {
+    try {
+        const response = await axios.get('/order/my/checkout');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch checkout' };
+    }
+
+}
+
+//------------------------------ORDERS--------------------------------
+
+//COD Order
+export const createOrder = async (orderData) => {
+    try {
+        const response = await axios.post('/order/create/cod', orderData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Order creation failed' };
+    }
+}
+
+//ONLINE Order
+export const onlineCreateOrder = async (orderData) => {
+    try {
+        const response = await axios.post('/order/create/online', orderData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Order creation failed' };
+    }
+    }
+ 
+export const verifyPayment = async (paymentData) =>{
+    try {
+        const response = await axios.post('/order/verify/payment', paymentData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Payment verification failed' };
+    }
+}   
+
+
+//GET MY ORDER
+export const getMyOrders = async () => {
+    try {
+        const response = await axios.get('/order/my/orders');
+        return response.data;
+    } catch (error){
+        throw error.response?.data || { message: 'Failed to fetch orders' };
+    }
+
+    }
+
+export const getOrderById = async (orderId) => {
+    try {
+        const response = await axios.get(`/order/my/orders/${orderId}`);
+        return response.data;
+    } catch (error){
+        throw error.response?.data || { message: 'Failed to fetch order' };
+    }
+
+    }
+
+
+
+//----------------------------------SELLER------------------
+export const getSellerOrders = async () => {
+    try {
+        const response = await axios.get('/order/seller/all/orders');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch orders' };
+    
+    }
+}
+
+export const getSellerOrderById = async (orderId) => {
+    try {
+        const response = await axios.get(`/order/seller/all/orders/${orderId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch order' };
+    
+    }
+
+    }
+
+    

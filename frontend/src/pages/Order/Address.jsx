@@ -62,6 +62,13 @@ const Address = () => {
     }));
   };
 
+  const handleToggleDefault = () => {
+    setFormData(prev => ({
+      ...prev,
+      isSelected: !prev.isSelected
+    }));
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -190,7 +197,7 @@ const Address = () => {
 
         {/* Address List */}
         {addresses.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+          <div className="text-center py-12 bg-white dark:bg-black rounded-2xl border border-red-200 dark:border-red-800">
             <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Addresses Yet</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-4">Add your first address to get started</p>
@@ -206,7 +213,7 @@ const Address = () => {
             {addresses.map((address) => (
               <div
                 key={address._id}
-                className={`bg-white dark:bg-gray-900 rounded-2xl border transition-all duration-300 ${
+                className={`bg-red-50 dark:bg-red-900/30 rounded-2xl border transition-all duration-300 ${
                   address.isSelected 
                     ? 'border-red-500 shadow-lg ring-2 ring-red-500/20' 
                     : 'border-gray-200 dark:border-gray-800 hover:shadow-md'
@@ -323,8 +330,8 @@ const Address = () => {
       {/* Address Form Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-5 flex justify-between items-center">
+          <div className="bg-white dark:bg-black rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-red-200 dark:border-red-900">
+            <div className="sticky top-0 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 p-5 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {editingAddress ? 'Edit Address' : 'Add New Address'}
               </h2>
@@ -332,7 +339,7 @@ const Address = () => {
                 onClick={resetForm}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
               >
-                <X size={20} className="text-gray-500" />
+                <X size={20} className="text-gray-500 hover:text-red-500" />
               </button>
             </div>
             
@@ -348,7 +355,7 @@ const Address = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Enter full name"
                   />
                 </div>
@@ -362,7 +369,7 @@ const Address = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Enter email"
                   />
                 </div>
@@ -377,7 +384,7 @@ const Address = () => {
                     onChange={handleInputChange}
                     required
                     pattern="[0-9]{10}"
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="10-digit mobile number"
                   />
                 </div>
@@ -391,7 +398,7 @@ const Address = () => {
                     value={formData.alternatePhone}
                     onChange={handleInputChange}
                     pattern="[0-9]{10}"
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Optional"
                   />
                 </div>
@@ -405,7 +412,7 @@ const Address = () => {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="House number, street"
                   />
                 </div>
@@ -418,7 +425,7 @@ const Address = () => {
                     name="landmark"
                     value={formData.landmark}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Nearby landmark"
                   />
                 </div>
@@ -432,7 +439,7 @@ const Address = () => {
                     value={formData.city}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Enter city"
                   />
                 </div>
@@ -446,7 +453,7 @@ const Address = () => {
                     value={formData.state}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Enter state"
                   />
                 </div>
@@ -461,7 +468,7 @@ const Address = () => {
                     onChange={handleInputChange}
                     required
                     pattern="[0-9]{6}"
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="6-digit PIN code"
                   />
                 </div>
@@ -474,7 +481,7 @@ const Address = () => {
                     name="country"
                     value={formData.country}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Country"
                   />
                 </div>
@@ -486,24 +493,39 @@ const Address = () => {
                     name="addressType"
                     value={formData.addressType}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500"
                   >
                     <option value="home">Home</option>
                     <option value="work">Work</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="isSelected"
-                    checked={formData.isSelected}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
-                  />
-                  <label className="text-sm text-gray-700 dark:text-gray-300">
-                    Set as default address
-                  </label>
+                
+                {/* Toggle Switch for Default Address */}
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Set as default address
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Make this your primary address
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleDefault}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                      formData.isSelected ? 'bg-red-600' : 'bg-gray-300 dark:bg-gray-700'
+                    }`}
+                    role="switch"
+                    aria-checked={formData.isSelected}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                        formData.isSelected ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
               
@@ -511,7 +533,7 @@ const Address = () => {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-700 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

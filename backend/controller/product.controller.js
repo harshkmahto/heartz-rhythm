@@ -2055,3 +2055,101 @@ export const getComingSoonDetails = async (req, res) => {
     }
 };
  
+
+//Apply coupon
+export const couponApplied = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const { couponCode } = req.body;
+        
+        if (!couponCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Coupon code is required"
+            });
+        }
+        
+        const product = await ProductModel.findById(productId);
+        
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        if (!product.discount && !product.discount.code ) {
+            return res.status(404).json({
+                success: false,
+                message: "No discount found"
+            });
+        }
+
+         if (product.discount.code !== couponCode.toUpperCase()) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid coupon code for this product"
+            });
+        }
+
+         return res.status(200).json({
+            success: true,
+            message: "Coupon applied successfully",
+             data: {
+                discountType: product.discount.type, 
+                discountValue: product.discount.value, 
+                couponCode: product.discount.code
+            }
+        });
+        
+        
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+        
+    }
+}
+
+// Get available coupons for a product
+export const getProductCoupon = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        
+        const product = await ProductModel.findById(productId);
+        
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+        
+        if (!product.discount || !product.discount.code || !product.discount.value) {
+            return res.status(200).json({
+                success: true,
+                message: "No coupons available for this product",
+                data: null
+            });
+        }
+        
+        // Return coupon info
+        return res.status(200).json({
+            success: true,
+            message: "Coupon available",
+            data: {
+                code: product.discount.code,
+                type: product.discount.type,
+                value: product.discount.value,
+                description: `Get ${product.discount.type === 'percentage' ? product.discount.value + '% OFF' : '₹' + product.discount.value + ' OFF'} with code ${product.discount.code}`
+            }
+        });
+        
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

@@ -65,6 +65,16 @@ import Help from "../pages/Auth/Help";
 import Sellers from "../pages/ShowCase/Sellers";
 import SerchPage from "../pages/Products/SerchPage";
 import Address from "../pages/Order/Address";
+import OrderConfirmation from "../pages/Order/OrderConfirmation";
+import MyOrders from "../components/order/MyOrders";
+import OrderDetails from "../components/order/OrderDetails";
+import Ordermanagement from "../pages/Seller/orders/SellerOrdermanagement";
+import AllOrders from "../pages/Seller/orders/SellerOrders";
+import SellerOrdermanagement from "../pages/Seller/orders/SellerOrdermanagement";
+import SellerOrders from "../pages/Seller/orders/SellerOrders";
+import SellerOrderDetails from "../pages/Seller/orders/SellerOrderDetails";
+import SellerCancelledOrders from "../pages/Seller/orders/SellerCancelledOrders";
+import SellerCompletedOrders from "../pages/Seller/orders/SellerCompletedOrders";
 
 
 
@@ -99,17 +109,23 @@ const router = createBrowserRouter([
             {path: 'sellers', element:<Sellers/>},
             {path: 'search', element:<SerchPage/>},
             {path: 'my-address', element:<Address/>},
+            {path: 'order-confirmation', element:<OrderConfirmation/>},
+            {path: 'order-details/:orderId', element:<OrderDetails/>},
 
             {path: 'returns', element:<ReturnReplace/>},
             {path: 'terms', element:<Terms/>},
             {path: 'privacy', element:<Policies/>},
             {path: 'help', element:<Help/>},
+
+
             {path: '*', element: <NotFound/>},
 
 
 
 
-            
+
+
+            {path: 'my-orders', element: <MyOrders/>},
             {path: 'wishlist',element: ( <ProtectedRoute>  <WishList/> </ProtectedRoute> )},
             {path: 'cart', element: <Cart/>},
             {path: 'checkout', element: <Checkout/>},
@@ -135,6 +151,13 @@ const router = createBrowserRouter([
             {path: 'analytics', element:<SellerAnalytics/>},
             {path: 'product/report', element:<ReportedProducts/>},
             {path: 'products/blocked', element:<MyBlockedProducts/>},
+            {path: 'orders', element:<SellerOrdermanagement/>},
+            {path: 'orders/all', element:<SellerOrders/>},
+            {path: 'orders/details/:orderId', element:<SellerOrderDetails/>},
+            {path: 'orders/cancelled', element:<SellerCancelledOrders/>},
+            {path: 'orders/delivered', element:<SellerCompletedOrders/>},
+
+
             
         ],
     },

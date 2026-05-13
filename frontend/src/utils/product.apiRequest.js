@@ -164,6 +164,24 @@ export const getComingSoonDetails = async (productId) => {
     }
     }  
 
+export const getProductCoupon = async (productId) => {
+    try {
+        const response = await api.get(`/product/public/coupon/${productId}`);
+        return response.data;
+    } catch (error){
+        throw error.response?.data || { message: 'Failed to fetch coupon' };
+    }
+    }
+
+// In order.apiRequest.js
+export const couponApplied = async (productId, data) => {
+    try {
+        const response = await api.post(`/product/public/coupon/apply/${productId}`, data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Coupon application failed' };
+    }
+};
 //-----------------WISHLIST----------------
 export const addToWishlist = async (productId) => {
     try {

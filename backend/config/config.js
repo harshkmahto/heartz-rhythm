@@ -40,6 +40,13 @@ if(!process.env.IMAGEKIT_URL_ENDPOINT){
     throw new Error("IMAGEKIT_URL_ENDPOINT variable are missing") 
 }
 
+if(!process.env.RAZOR_API_KEY){
+    throw new Error("RAZOR_API_KEY variable are missing") 
+}
+if(!process.env.RAZOR_SECRET_KEY){
+    throw new Error("RAZOR_API_SECRET variable are missing") 
+}
+
 
 const cofig = {
     DB_URI: process.env.DB_URI,
@@ -52,6 +59,8 @@ const cofig = {
     IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
     IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
+    RAZOR_API_KEY: process.env.RAZOR_API_KEY,
+    RAZOR_API_SECRET: process.env.RAZOR_SECRET_KEY,
     
 }
 

@@ -41,7 +41,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
 
   const profileMenuItems = [
     { path: '/profile', label: 'My Profile', icon: User },
-    { path: '/orders', label: 'My Orders', icon: Package },
+    { path: '/my-orders', label: 'My Orders', icon: Package },
     { path: '/cart', label: 'My Cart', icon: ShoppingCart },
     { path: '/wishlist', label: 'Wishlist', icon: Heart },
     { path: '/my-address', label: 'My Address', icon: Home }
