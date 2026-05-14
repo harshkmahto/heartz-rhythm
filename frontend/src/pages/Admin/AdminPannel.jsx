@@ -39,10 +39,12 @@ import {
   Flame,
   ShieldBanIcon,
   Trash,
-  IndianRupee
+  IndianRupee,
+  ListOrderedIcon
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { FaWindowClose } from 'react-icons/fa';
 
 const AdminPanel = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -108,10 +110,10 @@ const AdminPanel = () => {
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, section: 'orders', badge: '342',
       subItems: [
         { name: 'All Orders', path: '/admin/orders/all', icon: List },
-        { name: 'Pending', path: '/admin/orders/pending', icon: Clock },
+        { name: 'Placed', path: '/admin/orders/placed', icon: Truck},
         { name: 'Processing', path: '/admin/orders/processing', icon: Truck },
-        { name: 'Completed', path: '/admin/orders/completed', icon: Award },
-        { name: 'Refunds', path: '/admin/orders/refunds', icon: DollarSign }
+        { name: 'Canclled', path: '/admin/orders/cancelled', icon: FaWindowClose },
+        { name: 'Refunds', path: '/admin/orders/refunds', icon: IndianRupee }
       ]
     },
     { name: 'Analytics', path: '/admin/analytics', icon: BarChart3, section: 'analytics',

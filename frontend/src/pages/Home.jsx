@@ -17,8 +17,8 @@ const Home = () => {
       <Category />
      
       <Banner/>
-      <ComingSoonProducts/>
       <ProductsGrid />
+      <ComingSoonProducts/>
       <RoleButtonHero/>
       <MusicHeroSection />
    

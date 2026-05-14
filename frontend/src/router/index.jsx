@@ -75,6 +75,14 @@ import SellerOrders from "../pages/Seller/orders/SellerOrders";
 import SellerOrderDetails from "../pages/Seller/orders/SellerOrderDetails";
 import SellerCancelledOrders from "../pages/Seller/orders/SellerCancelledOrders";
 import SellerCompletedOrders from "../pages/Seller/orders/SellerCompletedOrders";
+import AdminOrderManagement from "../pages/Admin/orders/AdminOrderManagement";
+import AdminAllOrder from "../pages/Admin/orders/AdminAllOrder";
+import RefundedOrders from "../pages/Admin/orders/AdminRefundedOrders";
+import AdminOrderDetails from "../pages/Admin/orders/AdminOrderDetails";
+import CancelledOrders from "../pages/Admin/orders/AdminCancelledOrders";
+import AdminRefundedOrders from "../pages/Admin/orders/AdminRefundedOrders";
+import AdminCancelledOrders from "../pages/Admin/orders/AdminCancelledOrders";
+import PlacedOrders from "../pages/Admin/orders/PlacedOrders";
 
 
 
@@ -182,6 +190,13 @@ const router = createBrowserRouter([
             {path: 'report/details/:id', element:<AdminReportDetails/>},
             {path: 'product/details/:productId', element:<AdminProductDetails/>},
             {path: 'products/blocked', element:<AllBlockedProducts/>},
+            {path: 'orders', element:<AdminOrderManagement/>},
+            {path: 'orders/all', element:<AdminAllOrder/>},
+            {path: 'orders/details/:orderId', element:<AdminOrderDetails/>},
+            {path: 'orders/placed', element:<PlacedOrders/>},
+            {path: 'orders/cancelled', element:<AdminCancelledOrders/>},
+            {path: 'orders/refunds', element:<AdminRefundedOrders/>},
+
            
         ],
     }

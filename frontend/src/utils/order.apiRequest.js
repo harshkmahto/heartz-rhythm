@@ -172,4 +172,49 @@ export const getSellerOrderById = async (orderId) => {
 
     }
 
+
+
+//------------------------------------ADMIN-----------------------------
+export const getAllOrders = async () => {
+    try {
+        const response = await axios.get('/order/admin/all/orders');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch orders' };
     
+    }
+
+    }
+
+export const getAllOrderDetails = async (orderId) => {
+    try {
+        const response = await axios.get(`/order/admin/all/orders/${orderId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch order' };
+    
+    }
+
+    
+    }  
+
+
+export const updateOrderStatus = async (orderId, status) => {
+    try {
+        const response = await axios.patch(`/order/admin/status/${orderId}`, { status });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Order status update failed' };
+    }
+}
+
+export const deleteOrder = async (orderId) => {
+    try {
+        const response = await axios.delete(`/order/admin/delete/${orderId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Order deletion failed' };
+    }
+}
+
+
