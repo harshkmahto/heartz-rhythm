@@ -199,9 +199,12 @@ export const getAllOrderDetails = async (orderId) => {
     }  
 
 
-export const updateOrderStatus = async (orderId, status) => {
+export const updateOrderStatus = async (orderId, status, reason = '') => {
     try {
-        const response = await axios.patch(`/order/admin/status/${orderId}`, { status });
+        const response = await axios.patch(`/order/admin/status/${orderId}`, { 
+            orderStatus: status,
+            reason: reason 
+        });
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Order status update failed' };

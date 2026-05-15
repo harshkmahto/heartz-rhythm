@@ -32,7 +32,7 @@ const verifyAndUpdateStock = async (checkout, session) => {
             throw new Error(`Insufficient stock for ${checkoutItem.title} - ${checkoutItem.colorName}. Available: ${variant.stock}`);
         }
 
-        const sellerId = product.seller;
+        const sellerId = product.sellerPanel;
 
         orderItems.push({
             product: product._id,
@@ -111,6 +111,15 @@ export const createOrder = async (req, res) => {
 
         const session = await mongoose.startSession();
         session.startTransaction();
+
+        const sellerExists = await sellerPanel.findById(product.sellerPanel);
+        if (!sellerExists) {
+            return res.status(404).json({
+                success: false,
+                message: "Seller not found"
+            });
+        }
+
 
         try {
             const { orderItems, subtotal, itemCount } = await verifyAndUpdateStock(checkout, session);
@@ -211,6 +220,14 @@ export const onlineCreateOrder = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Please select a delivery address"
+            });
+        }
+
+         const sellerExists = await sellerPanel.findById(product.sellerPanel);
+        if (!sellerExists) {
+            return res.status(404).json({
+                success: false,
+                message: "Seller not found"
             });
         }
 
@@ -601,7 +618,7 @@ export const getOrderById = async (req, res) => {
 
 
 //SELLER 
-// SELLER 
+
 export const getSellerOrders = async (req, res) => {
     try {
         const sellerId = req.user.id;
@@ -622,7 +639,7 @@ export const getSellerOrders = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit))
-            .populate('user', 'name email phone')
+            .populate('user', 'name profilePicture')
             .populate('billingAddress');
 
         if (!orders || orders.length === 0) {
@@ -712,7 +729,7 @@ export const getSellerOrderDetails = async (req, res) => {
         const order = await OrderModel.findOne({ 
             orderId: orderId
         })
-            .populate('user', 'name email phone')
+            .populate('user', 'name profilePicture')
             .populate('billingAddress')
             .populate('item.product', 'title thumbnail variants');
 
@@ -723,7 +740,6 @@ export const getSellerOrderDetails = async (req, res) => {
             });
         }
 
-        // Filter only seller's items
         const sellerItems = order.item.filter(item => 
             item.seller && item.seller.toString() === sellerId
         );
@@ -780,6 +796,14 @@ export const getSellerOrderDetails = async (req, res) => {
         });
     }
 };
+
+export const getSellerRevenue = async (req, res) => {
+    try {
+        
+    } catch (error) {
+        
+    }
+}   
 
 //ADMIN
 export const getAllOrders = async (req, res) => {
@@ -860,7 +884,12 @@ export const getAllOrders = async (req, res) => {
                 razorpayDetails: order.razorpayDetails,
                 sellerBreakdown: Object.values(sellerBreakdown),
                 createdAt: order.createdAt,
-                updatedAt: order.updatedAt
+                updatedAt: order.updatedAt,
+                cancelledBy: order.cancelledBy,
+                cancelledReason: order.cancelledReason,
+                cancelledAt: order.cancelledAt,
+                isRefunded: order.isRefunded,
+                refundedAt: order.refundedAt
             };
         });
 
@@ -1025,7 +1054,7 @@ export const getAllOrderDetails = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { orderStatus, itemStatuses, reason } = req.body;
+        const { orderStatus, itemStatuses, reason, processRefund } = req.body;
 
         const order = await OrderModel.findOne({ orderId: orderId });
 
@@ -1082,11 +1111,89 @@ export const updateOrderStatus = async (req, res) => {
                             cancelledReason: reason || 'Cancelled by admin',
                             cancelledAt: new Date()
                         };
+
+                        if (processRefund === true) {
+                            item.status.isRefunded = true;
+                            item.status.refundedAt = new Date();
+                        }
                     }
+                    
                     order.hasCancelledItems = true;
                     order.cancelledBy = 'admin';
                     order.cancelledReason = reason || 'Order cancelled by admin';
                     order.cancelledAt = new Date();
+
+                    if (processRefund === true && order.paymentType === 'online' && !order.isRefunded) {
+                        order.isRefunded = true;
+                        order.refundedAt = new Date();
+                        order.paymentStatus = 'refunded';
+
+                        if (order.razorpayDetails?.paymentId) {
+                            try {
+                                const refund = await razorpay.payments.refund(order.razorpayDetails.paymentId, {
+                                    amount: Math.round(order.totalPrice * 100),
+                                    speed: 'normal',
+                                    notes: {
+                                        orderId: order.orderId,
+                                        reason: reason || 'Order cancelled by admin'
+                                    }
+                                });
+                                
+                                order.razorpayDetails.refundId = refund.id;
+                                order.razorpayDetails.refundStatus = refund.status;
+                            } catch (razorpayError) {
+                                await session.abortTransaction();
+                                return res.status(500).json({
+                                    success: false,
+                                    message: "Order cancelled but refund failed at payment gateway",
+                                    error: razorpayError.error?.description || razorpayError.message
+                                });
+                            }
+                        }
+
+                        order.statusHistory.push({
+                            status: 'refunded',
+                            date: new Date(),
+                            description: `Refund processed for cancelled order. Reason: ${reason || 'Cancelled by admin'}`,
+                            updatedBy: req.user.id
+                        });
+                    }
+                }
+
+                if (orderStatus === 'returned' && processRefund === true && order.paymentType === 'online' && !order.isRefunded) {
+                    order.isRefunded = true;
+                    order.refundedAt = new Date();
+                    order.paymentStatus = 'refunded';
+
+                    if (order.razorpayDetails?.paymentId) {
+                        try {
+                            const refund = await razorpay.payments.refund(order.razorpayDetails.paymentId, {
+                                amount: Math.round(order.totalPrice * 100),
+                                speed: 'normal',
+                                notes: {
+                                    orderId: order.orderId,
+                                    reason: reason || 'Order returned'
+                                }
+                            });
+                            
+                            order.razorpayDetails.refundId = refund.id;
+                            order.razorpayDetails.refundStatus = refund.status;
+                        } catch (razorpayError) {
+                            await session.abortTransaction();
+                            return res.status(500).json({
+                                success: false,
+                                message: "Order returned but refund failed at payment gateway",
+                                error: razorpayError.error?.description || razorpayError.message
+                            });
+                        }
+                    }
+
+                    order.statusHistory.push({
+                        status: 'refunded',
+                        date: new Date(),
+                        description: `Refund processed for returned order. Reason: ${reason || 'Order returned'}`,
+                        updatedBy: req.user.id
+                    });
                 }
             }
 
@@ -1101,8 +1208,8 @@ export const updateOrderStatus = async (req, res) => {
                             cancelledBy: update.status === 'cancelled' ? 'admin' : item.status?.cancelledBy,
                             cancelledReason: update.status === 'cancelled' ? (update.reason || reason) : item.status?.cancelledReason,
                             cancelledAt: update.status === 'cancelled' ? new Date() : item.status?.cancelledAt,
-                            isRefunded: update.status === 'cancelled' ? true : item.status?.isRefunded,
-                            refundedAt: update.status === 'cancelled' ? new Date() : item.status?.refundedAt,
+                            isRefunded: update.status === 'cancelled' && update.processRefund === true ? true : item.status?.isRefunded,
+                            refundedAt: update.status === 'cancelled' && update.processRefund === true ? new Date() : item.status?.refundedAt,
                             updatedAt: new Date()
                         };
 
@@ -1147,6 +1254,36 @@ export const updateOrderStatus = async (req, res) => {
                     order.cancelledBy = 'admin';
                     order.cancelledReason = reason || 'All items cancelled by admin';
                     order.cancelledAt = new Date();
+                    
+                    const allItemsRefunded = order.item.every(item => item.status?.isRefunded === true);
+                    if (allItemsRefunded && order.paymentType === 'online' && !order.isRefunded) {
+                        order.isRefunded = true;
+                        order.refundedAt = new Date();
+                        order.paymentStatus = 'refunded';
+
+                        if (order.razorpayDetails?.paymentId) {
+                            try {
+                                const refund = await razorpay.payments.refund(order.razorpayDetails.paymentId, {
+                                    amount: Math.round(order.totalPrice * 100),
+                                    speed: 'normal',
+                                    notes: {
+                                        orderId: order.orderId,
+                                        reason: reason || 'All items cancelled by admin'
+                                    }
+                                });
+                                
+                                order.razorpayDetails.refundId = refund.id;
+                                order.razorpayDetails.refundStatus = refund.status;
+                            } catch (razorpayError) {
+                                await session.abortTransaction();
+                                return res.status(500).json({
+                                    success: false,
+                                    message: "Items cancelled but refund failed at payment gateway",
+                                    error: razorpayError.error?.description || razorpayError.message
+                                });
+                            }
+                        }
+                    }
                 } else if (order.item.some(item => item.status?.status === 'cancelled')) {
                     order.hasCancelledItems = true;
                 }
@@ -1163,7 +1300,7 @@ export const updateOrderStatus = async (req, res) => {
 
             return res.status(200).json({
                 success: true,
-                message: "Order status updated successfully",
+                message: processRefund === true ? "Order cancelled and refunded successfully" : "Order status updated successfully",
                 data: updatedOrder
             });
 
@@ -1184,6 +1321,13 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 
+export const getAdminRevenue = async (req, res) => {
+    try {
+        
+    } catch (error) {
+        
+    }
+}
 
 
 export const deleteOrder = async (req, res) => {

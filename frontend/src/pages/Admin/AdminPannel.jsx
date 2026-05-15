@@ -49,15 +49,14 @@ import { FaWindowClose } from 'react-icons/fa';
 const AdminPanel = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
 
-  const {isAuthenticated, user, logout } = useAuth();
-  // Handle window resize for responsive sidebar
+  const { isAuthenticated, user, logout } = useAuth();
+
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
@@ -73,7 +72,6 @@ const AdminPanel = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Close mobile menu when clicking outside or on a link
   const handleMobileMenuClose = () => {
     if (isMobile) {
       setIsMobileMenuOpen(false);
@@ -85,7 +83,6 @@ const AdminPanel = () => {
     navigate('/');
   };
 
-  // Main navigation items for admin sidebar
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, exact: true, section: 'dashboard' },
     { name: 'Users', path: '/admin/users', icon: Users, section: 'users',
@@ -103,17 +100,16 @@ const AdminPanel = () => {
         { name: 'All Products', path: '/admin/products/all', icon: Grid3x3 },
         { name: 'Price Updation', path: '/admin/products/price-update', icon: IndianRupee },
         { name: 'Reported Items', path: '/admin/products/report', icon: AlertCircle },
-        { name: 'Blocked Items', path: '/admin/products/blocked', icon: ShieldBanIcon}
-        
+        { name: 'Blocked Items', path: '/admin/products/blocked', icon: ShieldBanIcon }
       ]
     },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, section: 'orders', badge: '342',
       subItems: [
         { name: 'All Orders', path: '/admin/orders/all', icon: List },
-        { name: 'Placed', path: '/admin/orders/placed', icon: Truck},
-        { name: 'Processing', path: '/admin/orders/processing', icon: Truck },
-        { name: 'Canclled', path: '/admin/orders/cancelled', icon: FaWindowClose },
-        { name: 'Refunds', path: '/admin/orders/refunds', icon: IndianRupee }
+        { name: 'Placed', path: '/admin/orders/placed', icon: Truck },
+        { name: 'Cancelled', path: '/admin/orders/cancelled', icon: FaWindowClose },
+        { name: 'Refunds', path: '/admin/orders/refunds', icon: IndianRupee },
+        { name: 'Revenue', path: '/admin/orders/revenue', icon: IndianRupee },
       ]
     },
     { name: 'Analytics', path: '/admin/analytics', icon: BarChart3, section: 'analytics',
@@ -134,7 +130,6 @@ const AdminPanel = () => {
     { name: 'Settings', path: '/admin/settings', icon: Settings, section: 'settings' }
   ];
 
-  // Quick actions for right panel
   const quickActions = [
     { name: 'Add Admin', icon: User, color: 'red', action: () => navigate('/admin/users/add') },
     { name: 'View Reports', icon: FileText, color: 'red', action: () => navigate('/admin/analytics/reports') },
@@ -142,10 +137,9 @@ const AdminPanel = () => {
     { name: 'Manage Users', icon: Users, color: 'red', action: () => navigate('/admin/users') }
   ];
 
-
-  if(!isAuthenticated && user.role==='admin' ) {
+  if (!isAuthenticated && user.role === 'admin') {
     return null;
-  }   
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 dark:bg-black">
@@ -163,11 +157,11 @@ const AdminPanel = () => {
             ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             bg-white/95 backdrop-blur-xl border-r border-red-200/50 shadow-2xl shadow-red-500/10
             dark:bg-black/95 dark:backdrop-blur-xl dark:border-r dark:border-red-500/30 dark:shadow-2xl dark:shadow-red-500/20
-            overflow-hidden
+            flex flex-col overflow-hidden
           `}
         >
-          {/* Sidebar Header */}
-          <div className="relative overflow-hidden">
+          {/* Sidebar Header - Fixed */}
+          <div className="relative overflow-hidden flex-shrink-0">
             <div className="flex items-center justify-between h-20 px-5 border-b border-red-200/50 bg-gradient-to-r from-red-50/80 via-white to-red-50/30 dark:border-red-500/30 dark:bg-gradient-to-r dark:from-red-950/50 dark:via-black dark:to-red-950/30">
               {(!isMobile && isSidebarOpen) || (isMobile && isMobileMenuOpen) ? (
                 <div className="flex items-center gap-3 group">
@@ -215,11 +209,10 @@ const AdminPanel = () => {
               )}
             </div>
             
-            {/* Red Glow Animation Line */}
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse"></div>
           </div>
 
-          {/* Navigation */}
+          {/* Navigation - Scrollable Area */}
           <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-2 bg-white/50 dark:bg-black/50">
             {navItems.map((item) => (
               <div key={item.path} className="relative group">
@@ -252,7 +245,6 @@ const AdminPanel = () => {
                   )}
                 </NavLink>
                 
-                {/* SubItems */}
                 {((!isMobile && isSidebarOpen) || (isMobile && isMobileMenuOpen)) && item.subItems && (
                   <div className="ml-12 mt-2 space-y-1 border-l-2 border-red-200/50 pl-3 dark:border-red-500/30">
                     {item.subItems.map((subItem) => (
@@ -278,9 +270,9 @@ const AdminPanel = () => {
             ))}
           </nav>
 
-          {/* Sidebar Footer */}
+          {/* Sidebar Footer - Fixed at bottom */}
           {((!isMobile && isSidebarOpen) || (isMobile && isMobileMenuOpen)) && (
-            <div className="border-t border-red-200/50 p-4 bg-gradient-to-t from-red-50/20 to-transparent dark:border-red-500/30 dark:bg-gradient-to-t dark:from-red-950/20 dark:to-transparent">
+            <div className="flex-shrink-0 border-t border-red-200/50 p-4 bg-gradient-to-t from-red-50/20 to-transparent dark:border-red-500/30 dark:bg-gradient-to-t dark:from-red-950/20 dark:to-transparent">
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-3 w-full px-3 py-3 rounded-2xl text-red-600 hover:bg-red-50 transition-all duration-300 group justify-start dark:hover:bg-red-950/50"
@@ -291,9 +283,8 @@ const AdminPanel = () => {
             </div>
           )}
           
-          {/* Compact footer for desktop collapsed state */}
           {!isMobile && !isSidebarOpen && (
-            <div className="border-t border-red-200/50 p-4 bg-gradient-to-t from-red-50/20 to-transparent dark:border-red-500/30 dark:bg-gradient-to-t dark:from-red-950/20 dark:to-transparent">
+            <div className="flex-shrink-0 border-t border-red-200/50 p-4 bg-gradient-to-t from-red-50/20 to-transparent dark:border-red-500/30 dark:bg-gradient-to-t dark:from-red-950/20 dark:to-transparent">
               <button
                 onClick={handleLogout}
                 className="flex items-center justify-center w-full p-2 rounded-2xl text-red-600 hover:bg-red-50 transition-all duration-300 group dark:hover:bg-red-950/50"
@@ -315,7 +306,7 @@ const AdminPanel = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header - Red/Black Theme */}
-          <header className="relative bg-white/80 backdrop-blur-xl border-b border-red-200/50 shadow-sm dark:bg-black/80 dark:backdrop-blur-xl dark:border-b dark:border-red-500/30">
+          <header className="relative bg-white/80 backdrop-blur-xl border-b border-red-200/50 shadow-sm dark:bg-black/80 dark:backdrop-blur-xl dark:border-b dark:border-red-500/30 flex-shrink-0">
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-red-500 via-red-600 to-red-500 animate-pulse"></div>
             
             <div className="flex items-center justify-between gap-20 mx-10 px-4 md:px-6 h-16 lg:h-20">
@@ -330,7 +321,6 @@ const AdminPanel = () => {
                   <p className="text-2xl font-bold text-red-600 dark:text-red-500">Admin Panel</p>
                 </div>
                 
-                {/* Desktop Navigation Links */}
                 <div className="hidden lg:flex lg:justify-center items-center gap-2">
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 rounded-full blur-md animate-pulse dark:bg-gradient-to-r dark:from-red-600 dark:to-red-800"></div>
@@ -356,7 +346,6 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              {/* Right Section */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={toggleTheme}
@@ -376,62 +365,27 @@ const AdminPanel = () => {
                   </div>
                 </button>
 
-                {/* Profile Menu */}
                 <div className="relative">
                   <button
-                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-red-100 transition-all duration-300 hover:scale-105 group cursor-pointer dark:hover:bg-red-900/30"
                   >
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 rounded-full blur-md group-hover:blur-lg transition-all dark:bg-gradient-to-r dark:from-red-600 dark:to-red-800"></div>
                       <div className="relative w-9 h-9 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center shadow-md dark:bg-gradient-to-br dark:from-red-600 dark:to-red-800">
-                        {user.profilePicture?.url ? 
-                        (
+                        {user.profilePicture?.url ? (
                           <img 
                             src={user.profilePicture?.url} 
                             alt={user.name} 
                             className="w-full h-full rounded-full" 
                           />
-
                         ) : (
-                             <User className="w-4.5 h-4.5 text-white" strokeWidth={1.8} />
-
-                        )
-                       }
+                          <User className="w-4.5 h-4.5 text-white" strokeWidth={1.8} />
+                        )}
                       </div>
                     </div>
                   </button>
 
-                  {/* Dropdown Menu */}
-                  {isProfileMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-20" onClick={() => setIsProfileMenuOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border-red-200/50 rounded-2xl shadow-2xl border z-20 overflow-hidden dark:bg-black/95 dark:backdrop-blur-xl dark:border-red-500/30">
-                        <div className="p-4 border-b border-red-200/50 bg-gradient-to-r from-red-50/50 to-transparent dark:border-red-500/30 dark:bg-gradient-to-r dark:from-red-950/30 dark:to-transparent">
-                          <p className="text-sm font-bold text-gray-800 dark:text-white">{user.name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">{user.email}</p>
-                        </div>
-                        <div className="py-2">
-                          <button className="w-full px-4 py-2.5 text-sm text-left hover:bg-red-50 text-gray-700 hover:text-red-600 transition-colors flex items-center gap-3 group dark:hover:bg-red-950/50 dark:text-gray-300 dark:hover:text-red-400">
-                            <User className="w-4 h-4 text-gray-500 group-hover:text-red-600 dark:text-gray-500 dark:group-hover:text-red-400" />
-                            <span>Profile Settings</span>
-                          </button>
-                          <button className="w-full px-4 py-2.5 text-sm text-left hover:bg-red-50 text-gray-700 hover:text-red-600 transition-colors flex items-center gap-3 group dark:hover:bg-red-950/50 dark:text-gray-300 dark:hover:text-red-400">
-                            <Settings className="w-4 h-4 text-gray-500 group-hover:text-red-600 dark:text-gray-500 dark:group-hover:text-red-400" />
-                            <span>System Settings</span>
-                          </button>
-                          <hr className="my-1 border-red-200/50 dark:border-red-500/30" />
-                          <button 
-                            onClick={handleLogout}
-                            className="w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3 group dark:hover:bg-red-950/50"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Sign Out</span>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                 
                 </div>
                 <button
                   onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
@@ -455,7 +409,7 @@ const AdminPanel = () => {
 
         {/* Right Panel - Quick Actions */}
         <div className={`
-          fixed right-0 top-21 h-full w-80 bg-white/95 backdrop-blur-xl border-l border-red-200/50
+          fixed right-0 top-0 h-full w-80 bg-white/95 backdrop-blur-xl border-l border-red-200/50
           shadow-2xl shadow-red-500/10
           transition-all duration-500 ease-out z-40
           dark:bg-black/95 dark:backdrop-blur-xl dark:border-l dark:border-red-500/30
@@ -521,7 +475,6 @@ const AdminPanel = () => {
         }
         .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         
-        /* Neon Glow Effects */
         .glow-text {
           text-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(239, 68, 68, 0.3);
         }

@@ -32,9 +32,9 @@ import {
   Clock,
   Plus,
   PackageCheckIcon,
-  icons,
   AlertTriangle,
-  ShieldBan
+  ShieldBan,
+  IndianRupee
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -42,7 +42,6 @@ import { useAuth } from '../../context/AuthContext';
 const SellerPanel = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
   const { isDark, toggleTheme } = useTheme();
@@ -50,7 +49,6 @@ const SellerPanel = () => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
 
-  // Handle window resize for responsive sidebar
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
@@ -66,7 +64,6 @@ const SellerPanel = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Close mobile menu when clicking outside or on a link
   const handleMobileMenuClose = () => {
     if (isMobile) {
       setIsMobileMenuOpen(false);
@@ -78,7 +75,6 @@ const SellerPanel = () => {
     navigate('/auth');
   };
 
-  // Main navigation items for sidebar
   const navItems = [
     { name: 'Dashboard', path: '/seller', icon: LayoutDashboard, exact: true, section: 'dashboard' },
     { name: 'Products', path: '/seller/products', icon: Package, section: 'products',
@@ -96,7 +92,8 @@ const SellerPanel = () => {
         { name: 'All Orders', path: '/seller/orders/all', icon: List },
         { name: 'Pending', path: '/seller/orders/pending', icon: Clock },
         { name: 'Processing', path: '/seller/orders/processing', icon: Truck },
-        { name: 'Completed', path: '/seller/orders/completed', icon: Award }
+        { name: 'Completed', path: '/seller/orders/completed', icon: Award },
+        { name: 'Revenue', path: '/seller/orders/revenue', icon: IndianRupee},
       ]
     },
     { name: 'Analytics', path: '/seller/analytics', icon: BarChart3, section: 'analytics',
@@ -110,7 +107,6 @@ const SellerPanel = () => {
     { name: 'Settings', path: '/seller/settings', icon: Settings, section: 'settings' }
   ];
 
-  // Quick actions for right panel
   const quickActions = [
     { name: 'Product', icon: Package, color: 'emerald', action: () => navigate('/seller/products') },
     { name: 'Orders', icon: ShoppingCart, color: 'blue', action: () => navigate('/seller/orders') },
@@ -120,13 +116,11 @@ const SellerPanel = () => {
 
   useEffect(() => {
     if (!loading) {
-      // If not authenticated, redirect to login
       if (!isAuthenticated) {
         navigate('/auth');
         return;
       }
       
-      // If authenticated but not a seller, redirect to home
       if (isAuthenticated && user?.role !== 'seller') {
         navigate('/auth');
         return;
@@ -150,11 +144,11 @@ const SellerPanel = () => {
             ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             bg-green-50 backdrop-blur-xl border-r border-emerald-200/50 shadow-2xl shadow-emerald-500/10
             dark:bg-black/95 dark:backdrop-blur-xl dark:border-r dark:border-emerald-500/30 dark:shadow-2xl dark:shadow-emerald-500/20
-            overflow-hidden
+            flex flex-col overflow-hidden
           `}
         >
-          {/* Sidebar Header with Heart Rhythm Design */}
-          <div className="relative overflow-hidden">
+          {/* Sidebar Header with Heart Rhythm Design - Fixed */}
+          <div className="relative overflow-hidden flex-shrink-0">
             <div className={`flex items-center justify-between h-20 px-5 border-b border-emerald-200/50 bg-gradient-to-r from-emerald-50/80 via-white to-emerald-50/30 dark:border-emerald-500/30 dark:bg-gradient-to-r dark:from-emerald-950/30 dark:via-black dark:to-emerald-950/20`}>
               {(!isMobile && isSidebarOpen) || (isMobile && isMobileMenuOpen) ? (
                 <div className="flex items-center gap-3 group">
@@ -202,11 +196,10 @@ const SellerPanel = () => {
               )}
             </div>
             
-            {/* Heart Rhythm Animation Line with Glow */}
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-pulse shadow-lg shadow-emerald-500/50 dark:shadow-lg dark:shadow-emerald-500/50"></div>
           </div>
 
-          {/* Navigation with modern styling */}
+          {/* Navigation - Scrollable Area */}
           <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-2 bg-white/50 dark:bg-black/50">
             {navItems.map((item) => (
               <div key={item.path} className="relative group">
@@ -239,7 +232,6 @@ const SellerPanel = () => {
                   )}
                 </NavLink>
                 
-                {/* SubItems with modern dropdown style */}
                 {((!isMobile && isSidebarOpen) || (isMobile && isMobileMenuOpen)) && item.subItems && (
                   <div className={`ml-12 mt-2 space-y-1 border-l-2 border-emerald-200/50 pl-3 dark:border-emerald-500/30`}>
                     {item.subItems.map((subItem) => (
@@ -265,9 +257,9 @@ const SellerPanel = () => {
             ))}
           </nav>
 
-          {/* Sidebar Footer */}
+          {/* Sidebar Footer - Fixed at bottom */}
           {((!isMobile && isSidebarOpen) || (isMobile && isMobileMenuOpen)) && (
-            <div className="border-t border-emerald-200/50 p-4 bg-gradient-to-t from-emerald-50/20 to-transparent dark:border-emerald-500/30 dark:bg-gradient-to-t dark:from-emerald-950/20 dark:to-transparent">
+            <div className="flex-shrink-0 border-t border-emerald-200/50 p-4 bg-gradient-to-t from-emerald-50/20 to-transparent dark:border-emerald-500/30 dark:bg-gradient-to-t dark:from-emerald-950/20 dark:to-transparent">
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-3 w-full px-3 py-3 rounded-2xl text-red-600 hover:bg-red-50 transition-all duration-300 group justify-start dark:hover:bg-red-950/50"
@@ -278,9 +270,8 @@ const SellerPanel = () => {
             </div>
           )}
           
-          {/* Compact footer for desktop collapsed state */}
           {!isMobile && !isSidebarOpen && (
-            <div className="border-t border-emerald-200/50 p-4 bg-gradient-to-t from-emerald-50/20 to-transparent dark:border-emerald-500/30 dark:bg-gradient-to-t dark:from-emerald-950/20 dark:to-transparent">
+            <div className="flex-shrink-0 border-t border-emerald-200/50 p-4 bg-gradient-to-t from-emerald-50/20 to-transparent dark:border-emerald-500/30 dark:bg-gradient-to-t dark:from-emerald-950/20 dark:to-transparent">
               <button
                 onClick={handleLogout}
                 className="flex items-center justify-center w-full p-2 rounded-2xl text-red-600 hover:bg-red-50 transition-all duration-300 group dark:hover:bg-red-950/50"
@@ -301,7 +292,7 @@ const SellerPanel = () => {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="relative bg-white/80 backdrop-blur-xl border-b border-emerald-200/50 shadow-sm dark:bg-black/80 dark:backdrop-blur-xl dark:border-b dark:border-emerald-500/30">
+          <header className="relative bg-white/80 backdrop-blur-xl border-b border-emerald-200/50 shadow-sm dark:bg-black/80 dark:backdrop-blur-xl dark:border-b dark:border-emerald-500/30 flex-shrink-0">
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-400 animate-pulse shadow-lg shadow-emerald-500/50 dark:shadow-lg dark:shadow-emerald-500/50"></div>
             
             <div className="flex items-center justify-between gap-20 mx-10 px-4 md:px-6 h-16 lg:h-20">
@@ -342,11 +333,7 @@ const SellerPanel = () => {
                 </div>
               </div>
 
-            
-
-              {/* Right Section */}
               <div className="flex items-center gap-3">
-                {/* Modern Sliding Toggle Button with Glow */}
                 <button
                   onClick={toggleTheme}
                   className="relative group"
@@ -365,10 +352,8 @@ const SellerPanel = () => {
                   </div>
                 </button>
 
-                {/* Profile Menu */}
                 <div className="relative">
                   <button
-                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-emerald-100 transition-all duration-300 hover:scale-105 group cursor-pointer dark:hover:bg-emerald-900/30"
                   >
                     <div className="relative">
@@ -387,36 +372,7 @@ const SellerPanel = () => {
                     </div>
                   </button>
 
-                  {/* Dropdown Menu */}
-                  {isProfileMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setIsProfileMenuOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border border-emerald-200/50 rounded-2xl shadow-2xl z-20 overflow-hidden dark:bg-black/95 dark:backdrop-blur-xl dark:border-emerald-500/30">
-                        <div className="p-4 border-b border-emerald-200/50 bg-gradient-to-r from-emerald-50/50 to-transparent dark:border-emerald-500/30 dark:bg-gradient-to-r dark:from-emerald-950/30 dark:to-transparent">
-                          <p className="text-sm font-bold text-gray-800 dark:text-white">{user?.name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">{user?.email}</p>
-                        </div>
-                        <div className="py-2">
-                          <button className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors flex items-center gap-3 group dark:text-gray-300 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400">
-                            <User className="w-4 h-4 text-gray-500 group-hover:text-emerald-600 dark:text-gray-500 dark:group-hover:text-emerald-400" />
-                            <span>Profile Settings</span>
-                          </button>
-                          <button className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors flex items-center gap-3 group dark:text-gray-300 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400">
-                            <Settings className="w-4 h-4 text-gray-500 group-hover:text-emerald-600 dark:text-gray-500 dark:group-hover:text-emerald-400" />
-                            <span>Account Settings</span>
-                          </button>
-                          <hr className="my-1 border-emerald-200/50 dark:border-emerald-500/30" />
-                          <button 
-                            onClick={handleLogout}
-                            className="w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3 group dark:hover:bg-red-950/50"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Sign Out</span>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                
                 </div>
                 <button
                   onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
@@ -426,10 +382,8 @@ const SellerPanel = () => {
                 </button>
               </div>
             </div>
-
           </header>
 
-          {/* Main Content Area */}
           <main className="flex-1 overflow-y-auto bg-green-50 dark:bg-black/95">
             <div className="p-5 md:p-7 lg:p-8">
               <div className="animate-fade-in">
@@ -441,7 +395,7 @@ const SellerPanel = () => {
 
         {/* Right Panel - Quick Actions & Management */}
         <div className={`
-          fixed right-0 top-21 h-full w-80 bg-white/95 backdrop-blur-xl border-l border-emerald-200/50
+          fixed right-0 top-0 h-full w-80 bg-white/95 backdrop-blur-xl border-l border-emerald-200/50
           shadow-2xl shadow-emerald-500/10
           transition-all duration-500 ease-out z-40
           dark:bg-black/95 dark:backdrop-blur-xl dark:border-l dark:border-emerald-500/30 dark:shadow-emerald-500/20
@@ -508,7 +462,6 @@ const SellerPanel = () => {
         }
         .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         
-        /* Glow Effects for Dark Mode */
         .dark .glow-text {
           text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
         }
@@ -521,7 +474,6 @@ const SellerPanel = () => {
           box-shadow: 0 0 15px rgba(16, 185, 129, 0.5), 0 0 30px rgba(16, 185, 129, 0.3);
         }
         
-        /* Neon glow for active items */
         .dark .active-glow {
           box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3);
         }

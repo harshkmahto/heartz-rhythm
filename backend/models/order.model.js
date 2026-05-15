@@ -203,6 +203,24 @@ const orderSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    statusHistory: [{
+        status: {
+            type: String,
+            enum: ['placed', 'pending', 'processing', 'shipped', 'delivered', 'cancelled', 'returned', 'replaced', 'refunded'],
+            required: true
+        },
+        date: {
+            type: Date,
+            default: Date.now
+        },
+        description: {
+            type: String,
+            trim: true
+        },
+        itemId: {
+            type: mongoose.Schema.Types.ObjectId
+        }
+    }]
 
 
 

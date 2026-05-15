@@ -16,7 +16,6 @@ import AdminDashboard from "../pages/Admin/AdminDashboard";
 import SellerProductManagement from "../pages/Seller/SellerProductManagement";
 import SellerAllProduct from "../pages/Seller/SellerAllProduct";
 import AllUsers from "../pages/Admin/User/AllUsers";
-import OrderManagement from "../pages/Admin/OrderManagement";
 import ProductManagement from "../pages/Admin/products/ProductManagement";
 import UserManagement from "../pages/Admin/User/UserManagement";
 import WishList from "../pages/Products/WishList";
@@ -83,6 +82,8 @@ import CancelledOrders from "../pages/Admin/orders/AdminCancelledOrders";
 import AdminRefundedOrders from "../pages/Admin/orders/AdminRefundedOrders";
 import AdminCancelledOrders from "../pages/Admin/orders/AdminCancelledOrders";
 import PlacedOrders from "../pages/Admin/orders/PlacedOrders";
+import SellerRevenue from "../pages/Seller/orders/SellerRevenue";
+import AdminRevenue from "../pages/Admin/orders/AdminRevenue";
 
 
 
@@ -164,6 +165,7 @@ const router = createBrowserRouter([
             {path: 'orders/details/:orderId', element:<SellerOrderDetails/>},
             {path: 'orders/cancelled', element:<SellerCancelledOrders/>},
             {path: 'orders/delivered', element:<SellerCompletedOrders/>},
+            {path: 'orders/revenue', element:<SellerRevenue/>},
 
 
             
@@ -176,7 +178,6 @@ const router = createBrowserRouter([
             {index: true, element:<AdminDashboard/>},
             {path: 'users/all', element:<AllUsers/>},
             {path: 'users', element:<UserManagement/>},
-            {path: 'orders', element:<OrderManagement/>},
             {path: 'products', element:<ProductManagement/>},
             {path: 'users/sellers', element:<AllSellers/>},
             {path: 'seller-profile/:userId', element:<SellerAllDetails/>},
@@ -196,7 +197,7 @@ const router = createBrowserRouter([
             {path: 'orders/placed', element:<PlacedOrders/>},
             {path: 'orders/cancelled', element:<AdminCancelledOrders/>},
             {path: 'orders/refunds', element:<AdminRefundedOrders/>},
-
+            {path: 'orders/revenue', element:<AdminRevenue/>},
            
         ],
     }

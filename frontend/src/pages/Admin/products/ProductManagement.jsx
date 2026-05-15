@@ -1,4 +1,3 @@
-// ProductManagement.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -33,12 +32,9 @@ const ProductManagement = () => {
   const [draftProducts, setDraftProducts] = useState([]);
   const [returnAvailableProducts, setReturnAvailableProducts] = useState([]);
   const [replacementAvailableProducts, setReplacementAvailableProducts] = useState([]);
-  
-  // Date wise product creation stats
   const [productCreationStats, setProductCreationStats] = useState([]);
   const [mostProductiveDay, setMostProductiveDay] = useState(null);
   
-  // Refs for scrollable containers
   const comingSoonRef = useRef(null);
   const activeRef = useRef(null);
   const featuredRef = useRef(null);
@@ -58,14 +54,12 @@ const ProductManagement = () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch all products directly without statistics endpoint
       const productsResponse = await getAllProducts();
       
       if (productsResponse.success && productsResponse.data) {
         const products = productsResponse.data.products || [];
         setAllProducts(products);
         
-        // Calculate statistics from products data
         const activeCount = products.filter(p => p.status === 'active' && !p.isComingSoon).length;
         const draftCount = products.filter(p => p.status === 'draft').length;
         const scheduledCount = products.filter(p => p.status === 'scheduled').length;
@@ -83,18 +77,14 @@ const ProductManagement = () => {
           totalSold: totalSoldSum
         });
         
-        // Filter products by status
         setComingSoonProducts(products.filter(p => p.isComingSoon === true));
         setActiveProducts(products.filter(p => p.status === 'active' && !p.isComingSoon));
         setFeaturedProducts(products.filter(p => p.isFeatured === true));
         setScheduledProducts(products.filter(p => p.status === 'scheduled'));
         setDraftProducts(products.filter(p => p.status === 'draft'));
-        
-        // Filter by return and replacement availability
         setReturnAvailableProducts(products.filter(p => p.return?.isAvailable === true));
         setReplacementAvailableProducts(products.filter(p => p.replacement?.isAvailable === true));
         
-        // Calculate product creation statistics by date
         calculateProductCreationStats(products);
       } else {
         setError('Failed to load products');
@@ -170,17 +160,22 @@ const ProductManagement = () => {
         timeoutIds[section] = setTimeout(() => {
           checkScrollButtons(ref, section);
         }, 100);
-        ref.current.addEventListener('scroll', () => checkScrollButtons(ref, section));
+        
+        const handleScroll = () => checkScrollButtons(ref, section);
+        ref.current.addEventListener('scroll', handleScroll);
+        
+        ref.current._scrollHandler = handleScroll;
       }
     });
     
     return () => {
       sections.forEach(section => {
         const ref = refs[section];
-        if (ref.current) {
-          ref.current.removeEventListener('scroll', () => checkScrollButtons(ref, section));
-          if (timeoutIds[section]) clearTimeout(timeoutIds[section]);
+        if (ref.current && ref.current._scrollHandler) {
+          ref.current.removeEventListener('scroll', ref.current._scrollHandler);
+          delete ref.current._scrollHandler;
         }
+        if (timeoutIds[section]) clearTimeout(timeoutIds[section]);
       });
     };
   }, [allProducts]);
@@ -200,7 +195,8 @@ const ProductManagement = () => {
             {showLeftArrow[sectionKey] && (
               <button
                 onClick={() => scroll(refProp, 'left')}
-                className="p-2 bg-white dark:bg-black/60 rounded-full shadow-md border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                className="p-2 bg-white dark:bg-black/60 rounded-full shadow-md border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-all z-10"
+                aria-label="Scroll left"
               >
                 <ChevronLeft size={20} className="text-red-600" />
               </button>
@@ -208,7 +204,8 @@ const ProductManagement = () => {
             {showRightArrow[sectionKey] && (
               <button
                 onClick={() => scroll(refProp, 'right')}
-                className="p-2 bg-white dark:bg-black/60 rounded-full shadow-md border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                className="p-2 bg-white dark:bg-black/60 rounded-full shadow-md border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-all z-10"
+                aria-label="Scroll right"
               >
                 <ChevronRight size={20} className="text-red-600" />
               </button>
@@ -225,8 +222,8 @@ const ProductManagement = () => {
       ) : (
         <div
           ref={refProp}
-          className="flex gap-5 overflow-x-auto pb-4"
-          style={{ scrollbarWidth: 'thin', msOverflowStyle: 'auto' }}
+          className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {products.map((product) => (
             <div key={product._id} className="flex-shrink-0 w-72">
