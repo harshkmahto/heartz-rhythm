@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { createAddress, deleteAddress, getAddressById, getMyAddresses, getSelectedAddress, setSelectedAddress, updateAddress } from '../controller/address.controller.js';
 import { authorized, isAdmin, isSeller, protect } from '../middleware/auth.middleware.js';
 import { createCheckout, getMyCheckout } from '../controller/cart.controller.js';
-import { createOrder, deleteOrder, getAllOrderDetails, getAllOrders, getMyOrders, getOrderById, getSellerOrderDetails, getSellerOrders, onlineCreateOrder, updateOrderStatus, verifyPayment } from '../controller/order.controller.js';
+import { createOrder, deleteOrder, getAdminRevenue, getAllOrderDetails, getAllOrders, getMyOrders, getOrderById, getSellerOrderDetails, getSellerOrders, getSellerRevenue, onlineCreateOrder, updateOrderStatus, verifyPayment } from '../controller/order.controller.js';
 
 
 
@@ -36,12 +36,14 @@ orderRoute.get('/my/orders/:orderId', authorized, getOrderById)
 //-------------------------SELLER-------------------------------------------------
 orderRoute.get('/seller/all/orders', authorized, isSeller, protect, getSellerOrders)
 orderRoute.get('/seller/all/orders/:orderId', authorized, isSeller, protect, getSellerOrderDetails)
-
+orderRoute.get('/seller/revenue', authorized, isSeller, protect, getSellerRevenue)
 
 
 //---------------------------------------ADMIN----------------------------------
 orderRoute.get('/admin/all/orders', authorized, isAdmin, getAllOrders)
 orderRoute.get('/admin/all/orders/:orderId', authorized, isAdmin, getAllOrderDetails)
+orderRoute.get('/admin/revenue', authorized, isAdmin, getAdminRevenue)
+
 
 orderRoute.patch('/admin/status/:orderId', authorized, isAdmin, updateOrderStatus)
 

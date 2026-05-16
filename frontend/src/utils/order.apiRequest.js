@@ -172,6 +172,16 @@ export const getSellerOrderById = async (orderId) => {
 
     }
 
+export const getSellerRevenue = async () => {
+    try {
+        const response = await axios.get('/order/seller/revenue');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch revenue' };
+    
+    }
+}
+
 
 
 //------------------------------------ADMIN-----------------------------
@@ -197,6 +207,16 @@ export const getAllOrderDetails = async (orderId) => {
 
     
     }  
+
+export const getAdminRevenue = async () => {
+   try {
+      const response = await axios.get('/order/admin/revenue');
+      return response.data;
+   } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch orders' };
+
+   }
+}   
 
 
 export const updateOrderStatus = async (orderId, status, reason = '') => {

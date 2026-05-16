@@ -799,11 +799,150 @@ export const getSellerOrderDetails = async (req, res) => {
 
 export const getSellerRevenue = async (req, res) => {
     try {
+        const sellerId = req.user.id;
+        const { startDate, endDate, period = 'all' } = req.query;
+
+        let dateFilter = {};
         
+        if (period === 'today') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            dateFilter = { createdAt: { $gte: today } };
+        } else if (period === 'week') {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            dateFilter = { createdAt: { $gte: weekAgo } };
+        } else if (period === 'month') {
+            const monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            dateFilter = { createdAt: { $gte: monthAgo } };
+        } else if (period === 'year') {
+            const yearAgo = new Date();
+            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+            dateFilter = { createdAt: { $gte: yearAgo } };
+        } else if (startDate && endDate) {
+            dateFilter = {
+                createdAt: {
+                    $gte: new Date(startDate),
+                    $lte: new Date(endDate)
+                }
+            };
+        }
+
+        const orders = await OrderModel.find({
+            'item.seller': sellerId,
+            ...dateFilter,
+            orderStatus: { $nin: ['cancelled'] }
+        }).populate('item.product', 'title thumbnail brand category subCategory variants');
+
+        if (!orders || orders.length === 0) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    summary: {
+                        totalSellerRevenue: 0,
+                        totalOrders: 0,
+                        totalItems: 0,
+                        totalDiscountApplied: 0,
+                    },
+                    items: [],
+                    orders: [],
+                }
+            });
+        }
+
+        let totalSellerRevenue = 0;
+        let totalDiscountApplied = 0;
+        let totalItems = 0;
+        const uniqueOrders = new Set();
+        const itemsList = [];
+
+        for (const order of orders) {
+            uniqueOrders.add(order._id.toString());
+
+            for (const item of order.item) {
+                if (!item.seller || item.seller.toString() !== sellerId) continue;
+                
+                const isReturned = item.status?.status === 'returned' || item.status?.status === 'refunded';
+                const isDelivered = (item.status?.status === 'delivered' || order.orderStatus === 'delivered') && 
+                    order.paymentStatus === 'success';
+
+                if (!isDelivered || isReturned) continue;
+                
+                const basePrice = item.basePrice || item.sellingPrice || 0;
+                const quantity = item.quantity || 1;
+                const discountPerItem = (item.mrp || 0) - basePrice;
+                const totalDiscount = discountPerItem * quantity;
+                const sellerRevenue = basePrice * quantity;
+                
+                totalSellerRevenue += sellerRevenue;
+                totalDiscountApplied += totalDiscount;
+                totalItems += quantity;
+                
+                itemsList.push({
+                    itemId: item._id,
+                    orderId: order.orderId,
+                    orderDate: order.createdAt,
+                    product: {
+                        _id: item.product?._id,
+                        title: item.title,
+                        thumbnail: item.thumbnail,
+                        brand: item.brand,
+                        category: item.category,
+                        subCategory: item.subCategory
+                    },
+                    variant: {
+                        colorName: item.colorName,
+                        colorCode: item.colorCode,
+                        size: item.size
+                    },
+                    pricing: {
+                        mrp: item.mrp,
+                        basePrice: basePrice,
+                        finalPrice: item.finalPrice,
+                        sellingPrice: item.sellingPrice,
+                        discountPerItem: discountPerItem,
+                        totalDiscount: totalDiscount,
+                        discountPercentage: item.mrp > 0 ? ((discountPerItem / item.mrp) * 100).toFixed(2) : 0
+                    },
+                    quantity: quantity,
+                    totalItemPrice: item.sellingPrice * quantity,
+                    sellerRevenue: sellerRevenue,
+                    paymentType: order.paymentType,
+                    paymentStatus: order.paymentStatus,
+                    orderStatus: item.status?.status || order.orderStatus
+                });
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                summary: {
+                    totalSellerRevenue: Math.round(totalSellerRevenue),
+                    totalOrders: uniqueOrders.size,
+                    totalItems: totalItems,
+                    totalDiscountApplied: Math.round(totalDiscountApplied)
+                },
+                items: itemsList,
+                orders: orders.map(order => ({
+                    orderId: order.orderId,
+                    orderDate: order.createdAt,
+                    totalAmount: order.totalPrice,
+                    orderStatus: order.orderStatus
+                }))
+            }
+        });
+
     } catch (error) {
-        
+        console.error('Get seller revenue error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-}   
+};
+ 
 
 //ADMIN
 export const getAllOrders = async (req, res) => {
@@ -1076,6 +1215,22 @@ export const updateOrderStatus = async (req, res) => {
                 }
 
                 order.orderStatus = orderStatus;
+
+                if (orderStatus === 'delivered') {
+                    if (order.paymentType === 'cod') {
+                        order.paymentStatus = 'success';
+                    }
+
+                    for (const item of order.item) {
+                        if (!item.status?.isRefunded) {
+                            item.status = {
+                                ...item.status,
+                                status: 'delivered',
+                                deliveredAt: new Date()
+                            };
+                        }
+                    }
+                } 
                 
                 if (!order.statusHistory) {
                     order.statusHistory = [];
@@ -1323,11 +1478,215 @@ export const updateOrderStatus = async (req, res) => {
 
 export const getAdminRevenue = async (req, res) => {
     try {
+        const { startDate, endDate, period = 'all' } = req.query;
+
+        let dateFilter = {};
         
+        if (period === 'today') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            dateFilter = { createdAt: { $gte: today } };
+        } else if (period === 'week') {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            dateFilter = { createdAt: { $gte: weekAgo } };
+        } else if (period === 'month') {
+            const monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            dateFilter = { createdAt: { $gte: monthAgo } };
+        } else if (period === 'year') {
+            const yearAgo = new Date();
+            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+            dateFilter = { createdAt: { $gte: yearAgo } };
+        } else if (startDate && endDate) {
+            dateFilter = {
+                createdAt: {
+                    $gte: new Date(startDate),
+                    $lte: new Date(endDate)
+                }
+            };
+        }
+
+        const orders = await OrderModel.find({
+            ...dateFilter,
+            orderStatus: { $nin: ['cancelled'] }
+        }).populate('item.product', 'title thumbnail brand category subCategory variants')
+          .populate('item.seller', 'brandName sellerName sellerEmail');
+
+        if (!orders || orders.length === 0) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    summary: {
+                        totalAdminRevenue: 0,
+                        totalSellerRevenue: 0,
+                        totalOrders: 0,
+                        totalItems: 0,
+                        totalDiscountApplied: 0,
+                        totalPlatformFee: 0,
+                        totalShippingCharge: 0
+                    },
+                    items: [],
+                    orders: [],
+                    sellerBreakdown: []
+                }
+            });
+        }
+
+        let totalAdminRevenue = 0;
+        let totalSellerRevenue = 0;
+        let totalDiscountApplied = 0;
+        let totalItems = 0;
+        let totalPlatformFee = 0;
+        let totalShippingCharge = 0;
+        const uniqueOrders = new Set();
+        const itemsList = [];
+        const sellerRevenueMap = new Map();
+
+        for (const order of orders) {
+            uniqueOrders.add(order._id.toString());
+            
+            totalPlatformFee += order.platformFee || 0;
+            totalShippingCharge += order.shippingCharge || 0;
+
+            for (const item of order.item) {
+                const isReturned = item.status?.status === 'returned' || item.status?.status === 'refunded';
+                const isDelivered = (item.status?.status === 'delivered' || order.orderStatus === 'delivered') && 
+                    order.paymentStatus === 'success';
+
+                if (!isDelivered || isReturned) continue;
+                
+                const basePrice = item.basePrice || item.sellingPrice || 0;
+                const quantity = item.quantity || 1;
+                const discountPerItem = (item.mrp || 0) - basePrice;
+                const totalDiscount = discountPerItem * quantity;
+                
+                // Seller Revenue = (basePrice * quantity) - discount
+                const sellerRevenue = basePrice * quantity;
+                
+                // Admin Revenue = totalPrice - seller revenue
+                // For individual item, calculate proportional admin revenue
+                const totalOrderValue = order.subTotal || 0;
+                const itemPercentage = totalOrderValue > 0 ? (item.sellingPrice / totalOrderValue) : 0;
+                const itemPlatformFee = (order.platformFee || 0) * itemPercentage;
+                const itemShippingCharge = (order.shippingCharge || 0) * itemPercentage;
+                const itemDiscountValue = (order.discountValue || 0) * itemPercentage;
+                
+                const itemTotalPrice = item.sellingPrice + itemPlatformFee + itemShippingCharge - itemDiscountValue;
+                const adminRevenue = itemTotalPrice - sellerRevenue;
+                
+                totalAdminRevenue += adminRevenue;
+                totalSellerRevenue += sellerRevenue;
+                totalDiscountApplied += totalDiscount;
+                totalItems += quantity;
+                
+                // Track seller-wise revenue
+                const sellerId = item.seller?._id?.toString() || item.seller?.toString();
+                if (sellerId) {
+                    if (!sellerRevenueMap.has(sellerId)) {
+                        sellerRevenueMap.set(sellerId, {
+                            sellerId: sellerId,
+                            sellerName: item.seller?.brandName || item.seller?.sellerName || 'Unknown',
+                            sellerEmail: item.seller?.sellerEmail,
+                            totalSellerRevenue: 0,
+                            totalAdminRevenue: 0,
+                            totalItems: 0,
+                            totalOrders: new Set()
+                        });
+                    }
+                    const sellerData = sellerRevenueMap.get(sellerId);
+                    sellerData.totalSellerRevenue += sellerRevenue;
+                    sellerData.totalAdminRevenue += adminRevenue;
+                    sellerData.totalItems += quantity;
+                    sellerData.totalOrders.add(order._id.toString());
+                }
+                
+                itemsList.push({
+                    itemId: item._id,
+                    orderId: order.orderId,
+                    orderDate: order.createdAt,
+                    seller: {
+                        _id: item.seller?._id,
+                        name: item.seller?.brandName || item.seller?.sellerName || 'Unknown'
+                    },
+                    product: {
+                        _id: item.product?._id,
+                        title: item.title,
+                        thumbnail: item.thumbnail,
+                        brand: item.brand,
+                        category: item.category,
+                        subCategory: item.subCategory
+                    },
+                    variant: {
+                        colorName: item.colorName,
+                        colorCode: item.colorCode,
+                        size: item.size
+                    },
+                    pricing: {
+                        mrp: item.mrp,
+                        basePrice: basePrice,
+                        finalPrice: item.finalPrice,
+                        sellingPrice: item.sellingPrice,
+                        discountPerItem: discountPerItem,
+                        totalDiscount: totalDiscount,
+                        discountPercentage: item.mrp > 0 ? ((discountPerItem / item.mrp) * 100).toFixed(2) : 0
+                    },
+                    quantity: quantity,
+                    totalItemPrice: item.sellingPrice * quantity,
+                    sellerRevenue: sellerRevenue,
+                    adminRevenue: adminRevenue,
+                    platformFee: itemPlatformFee,
+                    shippingCharge: itemShippingCharge,
+                    paymentType: order.paymentType,
+                    paymentStatus: order.paymentStatus,
+                    orderStatus: item.status?.status || order.orderStatus
+                });
+            }
+        }
+
+        // Convert seller map to array
+        const sellerBreakdown = Array.from(sellerRevenueMap.values()).map(seller => ({
+            ...seller,
+            totalOrders: seller.totalOrders.size
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                summary: {
+                    totalAdminRevenue: Math.round(totalAdminRevenue),
+                    totalSellerRevenue: Math.round(totalSellerRevenue),
+                    totalOrders: uniqueOrders.size,
+                    totalItems: totalItems,
+                    totalDiscountApplied: Math.round(totalDiscountApplied),
+                    totalPlatformFee: Math.round(totalPlatformFee),
+                    totalShippingCharge: Math.round(totalShippingCharge),
+                    platformPercentage: (totalAdminRevenue + totalSellerRevenue) > 0 ? 
+                        ((totalAdminRevenue / (totalAdminRevenue + totalSellerRevenue)) * 100).toFixed(2) : 0,
+                    sellerPercentage: (totalAdminRevenue + totalSellerRevenue) > 0 ? 
+                        ((totalSellerRevenue / (totalAdminRevenue + totalSellerRevenue)) * 100).toFixed(2) : 0
+                },
+                items: itemsList,
+                sellerBreakdown: sellerBreakdown,
+                orders: orders.map(order => ({
+                    orderId: order.orderId,
+                    orderDate: order.createdAt,
+                    totalAmount: order.totalPrice,
+                    paymentType: order.paymentType,
+                    paymentStatus: order.paymentStatus,
+                    orderStatus: order.orderStatus
+                }))
+            }
+        });
+
     } catch (error) {
-        
+        console.error('Get admin revenue error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-}
+};
 
 
 export const deleteOrder = async (req, res) => {
